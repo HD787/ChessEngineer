@@ -357,6 +357,21 @@ function isBrowserStockfish(controller: PlayerController) {
   return controller === BROWSER_STOCKFISH_ID;
 }
 
+function modelWebsocketUrl() {
+  const configured = process.env.NEXT_PUBLIC_MODEL_WS_URL?.trim();
+  if (configured) {
+    if (configured.startsWith("ws://") || configured.startsWith("wss://")) {
+      return configured;
+    }
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const path = configured.startsWith("/") ? configured : `/${configured}`;
+    return `${protocol}//${window.location.host}${path}`;
+  }
+
+  const host = window.location.hostname || "localhost";
+  return `ws://${host}:8787`;
+}
+
 function formatEval(result: StockfishResult | null, isThinking: boolean) {
   if (!result) return isThinking ? "..." : "0.00";
   if (result.mate !== null) {
@@ -839,8 +854,7 @@ export default function GamePage() {
   }
 
   useEffect(() => {
-    const wsHost = window.location.hostname || "localhost";
-    const ws = new WebSocket(`ws://${wsHost}:8787`);
+    const ws = new WebSocket(modelWebsocketUrl());
     engineWsRef.current = ws;
 
     ws.onopen = () => {

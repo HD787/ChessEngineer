@@ -21,3 +21,13 @@ npm run dev
 ```
 
 Open http://localhost:3001.
+
+By default, the browser connects to the model server at `ws://<browser-host>:8787`.
+For production behind Apache, set:
+
+```bash
+NEXT_PUBLIC_MODEL_WS_URL=/model-ws
+```
+
+Then proxy `/model-ws` to the model server running on `127.0.0.1:8787` with
+websocket upgrade support.
