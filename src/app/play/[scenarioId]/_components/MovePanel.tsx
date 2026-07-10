@@ -36,6 +36,7 @@ type EditorPiece = {
 };
 
 type Props = {
+  className?: string;
   positionEditor: boolean;
   activeMode: string;
   activeState: Snapshot | null | undefined;
@@ -65,6 +66,7 @@ type Props = {
 };
 
 export function MovePanel({
+  className = "",
   positionEditor,
   activeMode,
   activeState,
@@ -93,7 +95,7 @@ export function MovePanel({
   renderHistoryMoveLabel,
 }: Props) {
   return (
-    <section className="flex min-h-0 flex-col rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+    <section className={`${className} flex min-h-0 flex-col rounded-lg border border-zinc-200 bg-white p-4 shadow-sm`}>
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">{positionEditor ? "Position Editor" : "Moves"}</h2>
@@ -223,7 +225,10 @@ export function MovePanel({
             ) : null}
           </div>
 
-          <div ref={moveHistoryRef} className="mt-3 min-h-0 flex-1 overflow-auto rounded-md border border-zinc-300">
+          <div
+            ref={moveHistoryRef}
+            className="mt-3 min-h-0 flex-1 basis-0 overflow-y-auto overflow-x-hidden rounded-md border border-zinc-300 [scrollbar-gutter:stable]"
+          >
             <div className="sticky top-0 grid grid-cols-[44px_1fr_1fr] border-b border-zinc-300 bg-zinc-100 px-2 py-2 text-xs font-semibold uppercase text-zinc-500">
               <span>#</span>
               <span>White</span>
@@ -267,7 +272,7 @@ export function MovePanel({
             )}
           </div>
 
-          <div className="mt-3 rounded-md border border-zinc-300 bg-zinc-50 p-3">
+          <div className="mt-3 shrink-0 rounded-md border border-zinc-300 bg-zinc-50 p-3">
             <div className="flex items-center justify-center gap-2">
               <button
                 type="button"

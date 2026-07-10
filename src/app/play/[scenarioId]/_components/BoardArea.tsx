@@ -149,6 +149,7 @@ function PlayerCard({
 }
 
 type Props = {
+  className?: string;
   boardRef: RefObject<HTMLDivElement | null>;
   topPlayer: PlayerCardInfo;
   bottomPlayer: PlayerCardInfo;
@@ -168,6 +169,7 @@ type Props = {
 };
 
 export function BoardArea({
+  className = "",
   boardRef,
   topPlayer,
   bottomPlayer,
@@ -186,17 +188,17 @@ export function BoardArea({
   onDismissCheckmate,
 }: Props) {
   return (
-    <section className="grid min-h-[420px] grid-rows-[auto_minmax(0,1fr)_auto] lg:min-h-0">
-      <div className="mb-1">
+    <section className={`${className} flex min-h-0 flex-col items-stretch justify-start gap-1 lg:min-h-[420px]`}>
+      <div>
         <PlayerCard
           player={topPlayer}
           material={material}
           whiteMaterialAdvantage={whiteMaterialAdvantage}
         />
       </div>
-      <div className={`flex min-h-0 items-center justify-center overflow-hidden ${isReviewing ? "bg-amber-50" : ""}`}>
+      <div className={`board-frame flex shrink-0 items-center justify-center overflow-hidden ${isReviewing ? "bg-amber-50" : ""}`}>
         <div
-          className={`cg-wrap aspect-square h-full max-h-full max-w-full overflow-hidden ${
+          className={`cg-wrap board-square overflow-hidden ${
             showMoveSafetyHints ? "move-safety-enabled" : ""
           }`}
         >
@@ -239,7 +241,7 @@ export function BoardArea({
           ) : null}
         </div>
       </div>
-      <div className="mt-1">
+      <div className="mt-auto">
         <PlayerCard
           player={bottomPlayer}
           material={material}

@@ -590,6 +590,7 @@ export default function GamePage() {
   const [bestMoveArrows, setBestMoveArrows] = useState<BestMoveArrow[]>([]);
   const [bestMovesThinking, setBestMovesThinking] = useState(false);
   const [dismissedCheckmateFen, setDismissedCheckmateFen] = useState<string | null>(null);
+  const [mobilePanel, setMobilePanel] = useState<"left" | "right" | null>(null);
 
   const workerRef = useRef<Worker | null>(null);
   const pendingRef = useRef(new Map<string, (result: WorkerResponse) => void>());
@@ -706,7 +707,7 @@ export default function GamePage() {
   const evalTopHeight = evalTopSide === "w" ? evalBarWhite : 100 - evalBarWhite;
   const evalBottomHeight = 100 - evalTopHeight;
   const appGridClass =
-    "lg:grid-cols-[210px_minmax(0,min(820px,calc(100vh-118px)))_36px_minmax(300px,0.9fr)]";
+    "lg:grid-cols-[270px_minmax(0,min(900px,calc(100svh-114px)))_32px_minmax(300px,1fr)]";
   const topPlayer = isFlipped
     ? { side: "White", color: "w" as const, label: whiteLabel }
     : { side: "Black", color: "b" as const, label: blackLabel };
@@ -1763,110 +1764,175 @@ export default function GamePage() {
     currentPly === 0
       ? "Starting position"
       : String(Math.ceil(currentPly / 2)) + (currentPly % 2 === 0 ? "..." : ".") + " " + (timeline?.[currentPly]?.san ?? "");
+  const mobileBoardShift =
+    mobilePanel === "left"
+      ? "translate-x-[min(82vw,340px)]"
+      : mobilePanel === "right"
+        ? "-translate-x-[min(86vw,430px)]"
+        : "translate-x-0";
 
   return (
     <main
-      className="min-h-screen bg-[#f3f4f2] p-2 text-zinc-900 lg:h-screen lg:overflow-hidden"
+      className="min-h-svh overflow-x-hidden overflow-y-auto bg-[#f3f4f2] p-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-zinc-900 lg:h-svh lg:overflow-hidden lg:p-2"
       onPointerDownCapture={dismissCheckmateOverlay}
     >
-      <div className={"mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-2 lg:h-[calc(100vh-1rem)] " + appGridClass}>
-        <GameSidebar
-          status={status}
-          error={error}
-          availableModels={availableModels}
-          whiteController={whiteController}
-          blackController={blackController}
-          temperatureMode={temperatureMode}
-          temperatureOptions={temperatureOptions}
-          autoPlayModels={autoPlayModels}
-          canRequestModelMove={canRequestModelMove}
-          engineStatus={engineStatus}
-          engineThinking={engineThinking}
-          showEvalBar={showEvalBar}
-          evalText={showEvalBar ? formatEval(evalResult, evalThinking) : "hidden"}
-          showMoveQualityLabels={showMoveQualityLabels}
-          showMoveSafetyHints={showMoveSafetyHints}
-          showControlOverlay={showControlOverlay}
-          showOccupiedOnly={showOccupiedOnly}
-          showOwnOccupiedOnly={showOwnOccupiedOnly}
-          overlaySide={overlaySide}
-          controlsDisabled={isReviewing || positionEditor}
-          overlayOwnPiecesDisabled={!showControlOverlay || overlaySide === "both"}
-          onRestart={() => void resetGame()}
-          onFlip={() => setIsFlipped((value) => !value)}
-          onHome={returnHome}
-          onWhiteControllerChange={setWhiteController}
-          onBlackControllerChange={setBlackController}
-          onSwapPlayerColors={swapPlayerColors}
-          onTemperatureModeChange={setTemperatureMode}
-          onAutoPlayModelsChange={setAutoPlayModels}
-          onRequestModelMove={() => void requestCurrentModelMove()}
-          onShowEvalBarChange={setShowEvalBar}
-          onShowMoveQualityLabelsChange={setShowMoveQualityLabels}
-          onShowMoveSafetyHintsChange={setShowMoveSafetyHints}
-          onShowControlOverlayChange={setShowControlOverlay}
-          onShowOccupiedOnlyChange={setShowOccupiedOnly}
-          onShowOwnOccupiedOnlyChange={setShowOwnOccupiedOnly}
-          onOverlaySideChange={setOverlaySide}
-        />
+      <div className={"relative min-h-[calc(100svh-0.75rem)] w-full overflow-hidden lg:grid lg:h-full lg:min-h-0 lg:items-stretch lg:gap-2 lg:overflow-visible " + appGridClass}>
+        <div className="pointer-events-none absolute inset-x-2 top-2 z-40 flex justify-between lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobilePanel((panel) => (panel === "left" ? null : "left"))}
+            className="pointer-events-auto rounded-md border border-zinc-300 bg-white/95 px-3 py-1.5 text-xs font-bold text-zinc-900 shadow-sm"
+          >
+            Controls
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobilePanel((panel) => (panel === "right" ? null : "right"))}
+            className="pointer-events-auto rounded-md border border-zinc-300 bg-white/95 px-3 py-1.5 text-xs font-bold text-zinc-900 shadow-sm"
+          >
+            Moves
+          </button>
+        </div>
 
-        <BoardArea
-          boardRef={boardElRef}
-          topPlayer={topPlayer}
-          bottomPlayer={bottomPlayer}
-          material={material}
-          whiteMaterialAdvantage={whiteMaterialAdvantage}
-          isReviewing={isReviewing}
-          showMoveSafetyHints={showMoveSafetyHints}
-          selected={selected}
-          positionEditor={positionEditor}
-          legalTargets={legalTargets}
-          legalSafety={legalSafety}
-          isFlipped={isFlipped}
-          boardMoveLabel={renderBoardMoveLabel()}
-          showCheckmateOverlay={showCheckmateOverlay}
-          activeState={activeState}
-          onDismissCheckmate={dismissCheckmateOverlay}
-        />
+        <div
+          className={`absolute inset-y-0 left-0 z-30 min-h-0 w-[min(82vw,340px)] transition-transform duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-auto lg:translate-x-0 ${
+            mobilePanel === "left" ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <GameSidebar
+            className="h-full min-h-0 overflow-y-auto overscroll-contain rounded-none lg:rounded-lg"
+            status={status}
+            error={error}
+            availableModels={availableModels}
+            whiteController={whiteController}
+            blackController={blackController}
+            temperatureMode={temperatureMode}
+            temperatureOptions={temperatureOptions}
+            autoPlayModels={autoPlayModels}
+            canRequestModelMove={canRequestModelMove}
+            engineStatus={engineStatus}
+            engineThinking={engineThinking}
+            showEvalBar={showEvalBar}
+            evalText={showEvalBar ? formatEval(evalResult, evalThinking) : "hidden"}
+            showMoveQualityLabels={showMoveQualityLabels}
+            showMoveSafetyHints={showMoveSafetyHints}
+            showControlOverlay={showControlOverlay}
+            showOccupiedOnly={showOccupiedOnly}
+            showOwnOccupiedOnly={showOwnOccupiedOnly}
+            overlaySide={overlaySide}
+            controlsDisabled={isReviewing || positionEditor}
+            overlayOwnPiecesDisabled={!showControlOverlay || overlaySide === "both"}
+            onRestart={() => void resetGame()}
+            onFlip={() => setIsFlipped((value) => !value)}
+            onHome={returnHome}
+            onWhiteControllerChange={setWhiteController}
+            onBlackControllerChange={setBlackController}
+            onSwapPlayerColors={swapPlayerColors}
+            onTemperatureModeChange={setTemperatureMode}
+            onAutoPlayModelsChange={setAutoPlayModels}
+            onRequestModelMove={() => void requestCurrentModelMove()}
+            onShowEvalBarChange={setShowEvalBar}
+            onShowMoveQualityLabelsChange={setShowMoveQualityLabels}
+            onShowMoveSafetyHintsChange={setShowMoveSafetyHints}
+            onShowControlOverlayChange={setShowControlOverlay}
+            onShowOccupiedOnlyChange={setShowOccupiedOnly}
+            onShowOwnOccupiedOnlyChange={setShowOwnOccupiedOnly}
+            onOverlaySideChange={setOverlaySide}
+          />
+        </div>
 
-        <EvalBar
-          active={evalBarActive}
-          showEvalBar={showEvalBar}
-          label={evalLabel}
-          topSide={evalTopSide}
-          bottomSide={evalBottomSide}
-          topHeight={evalTopHeight}
-          bottomHeight={evalBottomHeight}
-        />
+        <div className={`absolute inset-0 z-10 min-h-0 transition-transform duration-300 ease-out lg:static lg:z-auto lg:h-full lg:translate-x-0 ${mobileBoardShift}`}>
+          <div
+            className={`absolute left-2 right-2 top-12 z-30 h-2 overflow-hidden rounded-full shadow-sm lg:hidden ${
+              evalBarActive ? "bg-zinc-950" : "bg-zinc-300"
+            }`}
+            aria-label={showEvalBar ? `Stockfish evaluation ${evalLabel}` : "Evaluation bar hidden"}
+          >
+            {evalBarActive ? (
+              <div
+                className="h-full bg-zinc-50 transition-[width] duration-1000 ease-out"
+                style={{ width: `${evalBarWhite}%` }}
+                aria-hidden="true"
+              />
+            ) : null}
+          </div>
+          <BoardArea
+            className="min-h-full [--board-max-size:calc(100svh-196px)] p-2 pt-16 pb-3 lg:h-full lg:min-h-0 lg:[--board-max-size:calc(100svh-118px)] lg:p-0"
+            boardRef={boardElRef}
+            topPlayer={topPlayer}
+            bottomPlayer={bottomPlayer}
+            material={material}
+            whiteMaterialAdvantage={whiteMaterialAdvantage}
+            isReviewing={isReviewing}
+            showMoveSafetyHints={showMoveSafetyHints}
+            selected={selected}
+            positionEditor={positionEditor}
+            legalTargets={legalTargets}
+            legalSafety={legalSafety}
+            isFlipped={isFlipped}
+            boardMoveLabel={renderBoardMoveLabel()}
+            showCheckmateOverlay={showCheckmateOverlay}
+            activeState={activeState}
+            onDismissCheckmate={dismissCheckmateOverlay}
+          />
+          {mobilePanel ? (
+            <button
+              type="button"
+              className="absolute inset-0 z-20 lg:hidden"
+              aria-label="Close side panel"
+              onClick={() => setMobilePanel(null)}
+            />
+          ) : null}
+        </div>
 
-        <MovePanel
-          positionEditor={positionEditor}
-          activeMode={activeMode}
-          activeState={activeState}
-          selected={selected}
-          currentOpening={currentOpening}
-          activeVariant={activeVariant}
-          isSolutionMode={isSolutionMode}
-          isReviewing={isReviewing}
-          bestMovesThinking={bestMovesThinking}
-          canShowBestMoves={Boolean(activeState && !activeState.isCheckmate && !activeState.isDraw && !positionEditor)}
-          moveHistoryRef={moveHistoryRef}
-          moveRows={moveRows}
-          currentPly={currentPly}
-          lastPly={lastPly}
-          timelineExists={Boolean(timeline)}
-          currentMoveText={currentMoveText}
-          editorPieces={editorPieces}
-          onTogglePositionEditor={togglePositionEditor}
-          onStartEditorPieceDrag={startEditorPieceDrag}
-          onChangeEditorTurn={(turn) => void changeEditorTurn(turn)}
-          onDeleteSelectedPiece={() => void deleteSelectedPiece()}
-          onShowSolutionTimeline={() => void showSolutionTimeline()}
-          onReturnFromSolution={returnFromSolution}
-          onShowBestMoves={() => void showBestMoves()}
-          onGoToPly={goToPly}
-          renderHistoryMoveLabel={renderHistoryMoveLabel}
-        />
+        <div className="hidden h-full min-h-0 lg:block">
+          <EvalBar
+            className="h-full"
+            active={evalBarActive}
+            showEvalBar={showEvalBar}
+            label={evalLabel}
+            topSide={evalTopSide}
+            bottomSide={evalBottomSide}
+            topHeight={evalTopHeight}
+            bottomHeight={evalBottomHeight}
+          />
+        </div>
+
+        <div
+          className={`absolute inset-y-0 right-0 z-30 min-h-0 w-[min(86vw,430px)] transition-transform duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-auto lg:translate-x-0 ${
+            mobilePanel === "right" ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <MovePanel
+            className="h-full min-h-0 overflow-y-auto overscroll-contain rounded-none lg:rounded-lg"
+            positionEditor={positionEditor}
+            activeMode={activeMode}
+            activeState={activeState}
+            selected={selected}
+            currentOpening={currentOpening}
+            activeVariant={activeVariant}
+            isSolutionMode={isSolutionMode}
+            isReviewing={isReviewing}
+            bestMovesThinking={bestMovesThinking}
+            canShowBestMoves={Boolean(activeState && !activeState.isCheckmate && !activeState.isDraw && !positionEditor)}
+            moveHistoryRef={moveHistoryRef}
+            moveRows={moveRows}
+            currentPly={currentPly}
+            lastPly={lastPly}
+            timelineExists={Boolean(timeline)}
+            currentMoveText={currentMoveText}
+            editorPieces={editorPieces}
+            onTogglePositionEditor={togglePositionEditor}
+            onStartEditorPieceDrag={startEditorPieceDrag}
+            onChangeEditorTurn={(turn) => void changeEditorTurn(turn)}
+            onDeleteSelectedPiece={() => void deleteSelectedPiece()}
+            onShowSolutionTimeline={() => void showSolutionTimeline()}
+            onReturnFromSolution={returnFromSolution}
+            onShowBestMoves={() => void showBestMoves()}
+            onGoToPly={goToPly}
+            renderHistoryMoveLabel={renderHistoryMoveLabel}
+          />
+        </div>
       </div>
     </main>
   );

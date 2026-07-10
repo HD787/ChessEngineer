@@ -1,6 +1,7 @@
 type Side = "w" | "b";
 
 type Props = {
+  className?: string;
   active: boolean;
   showEvalBar: boolean;
   label: string;
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function EvalBar({
+  className = "",
   active,
   showEvalBar,
   label,
@@ -21,7 +23,7 @@ export function EvalBar({
 }: Props) {
   return (
     <aside
-      className={`relative flex min-h-72 overflow-hidden rounded-md border shadow-sm lg:min-h-0 ${
+      className={`${className} relative flex min-h-72 overflow-hidden rounded-md border shadow-sm lg:min-h-0 ${
         active ? "border-zinc-400 bg-zinc-950" : "border-zinc-300 bg-zinc-300"
       }`}
       aria-label={showEvalBar ? `Stockfish evaluation ${label}` : "Evaluation bar hidden"}
