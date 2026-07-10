@@ -1,0 +1,21 @@
+{
+  "id": "wayward-queen",
+  "title": "Defend the Wayward Queen",
+  "description": "Take Black and stop the early Scholar's Mate attack.",
+  "category": "Opening defense",
+  "variants": [
+    {
+      "id": "qh5",
+      "label": "2.Qh5",
+      "detail": "Black to move after 2.Qh5",
+      "playerSide": "b",
+      "setup": { "pgn": "[Event \"Wayward Queen Defense\"]\n[Result \"*\"]\n\n1. e4 e5 2. Qh5 *" },
+      "temperature": { "mode": "argmax" },
+      "solution": {
+        "pgn": "[Event \"Wayward Queen Solution\"]\n[Result \"*\"]\n\n1. e4 e5 2. Qh5 Nc6 3. Bc4 g6 4. Qf3 Nf6 *",
+        "moves": ["2...Nc6", "3.Bc4", "g6", "4.Qf3", "Nf6"],
+        "explanation": "Develop the queen's knight to protect e5, meet Bc4 with ...g6, then develop ...Nf6 once the queen retreats to f3."
+      }
+    }
+  ]
+}

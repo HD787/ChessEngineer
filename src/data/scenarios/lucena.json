@@ -1,0 +1,37 @@
+{
+  "id": "lucena",
+  "title": "Lucena Position",
+  "description": "Build a bridge with the rook, shield your king from checks, and promote the pawn.",
+  "category": "Rook endgame",
+  "variants": [
+    {
+      "id": "b-file",
+      "label": "B-file bridge",
+      "detail": "White to move: convert the winning position",
+      "playerSide": "w",
+      "setup": {
+        "fen": "1K1k4/1P6/8/8/8/8/4R3/r7 w - - 0 1"
+      },
+      "temperature": {
+        "mode": "argmax"
+      },
+      "solution": {
+          "pgn": "[SetUp \"1\"]\n[FEN \"1K1k4/1P6/8/8/8/8/4R3/r7 w - - 0 1\"]\n[Result \"*\"]\n\n1. Rd2+ Ke7 2. Rd4 Ra5 3. Kc7 Rc5+ 4. Kb6 Rc1 5. Ka7 Ra1+ 6. Kb6 Rb1+ 7. Kc6 Rc1+ 8. Kb5 Rb1+ 9. Rb4 Rxb4+ 10. Kxb4 Kd6 11. b8=Q+ *",
+          "moves": [
+            "1.Rd2+", "Ke7",
+            "2.Rd4", "Ra5",
+            "3.Kc7", "Rc5+",
+            "4.Kb6", "Rc1",
+            "5.Ka7", "Ra1+",
+            "6.Kb6", "Rb1+",
+            "7.Kc6", "Rc1+",
+            "8.Kb5", "Rb1+",
+            "9.Rb4", "Rxb4+",
+            "10.Kxb4", "Kd6",
+            "11.b8=Q+"
+          ],
+          "explanation": "White checks the black king away, then builds the bridge with Rd4. The king walks out through the checks, and Rb4 blocks the final rook check. Black can trade rooks with Rxb4+, but after Kxb4 the pawn cannot be stopped, so White promotes with b8=Q+."
+      }
+    }
+  ]
+}

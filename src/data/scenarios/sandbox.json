@@ -1,0 +1,15 @@
+{
+  "id": "sandbox",
+  "title": "Sandbox",
+  "description": "Play from the starting position with any human or model pairing.",
+  "category": "Free play",
+  "variants": [
+    {
+      "id": "standard",
+      "label": "Standard position",
+      "detail": "Open board",
+      "setup": {},
+      "temperature": { "mode": "optimal" }
+    }
+  ]
+}

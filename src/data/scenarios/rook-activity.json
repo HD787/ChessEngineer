@@ -1,0 +1,21 @@
+{
+  "id": "rook-activity",
+  "title": "Rook Activity",
+  "description": "Choose activity over passive defense by invading the seventh rank and attacking pawns from behind.",
+  "category": "Rook endgame",
+  "variants": [
+    {
+      "id": "seventh-rank",
+      "label": "Invade the seventh",
+      "detail": "White to move: activate the rook",
+      "playerSide": "w",
+      "setup": { "fen": "5r2/p4pkp/6p1/8/8/6P1/5P1P/R5K1 w - - 0 1" },
+      "temperature": { "mode": "argmax" },
+      "solution": {
+        "pgn": "[SetUp \"1\"]\n[FEN \"5r2/p4pkp/6p1/8/8/6P1/5P1P/R5K1 w - - 0 1\"]\n[Result \"*\"]\n\n1. Rxa7 *",
+        "moves": ["1.Rxa7"],
+        "explanation": "The active rook immediately invades the seventh rank and attacks pawns from the side instead of waiting passively."
+      }
+    }
+  ]
+}

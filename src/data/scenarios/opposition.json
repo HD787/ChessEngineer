@@ -1,0 +1,21 @@
+{
+  "id": "opposition",
+  "title": "King and Pawn Opposition",
+  "description": "Use direct opposition to move your king in front of the pawn and escort it to promotion.",
+  "category": "Pawn endgame",
+  "variants": [
+    {
+      "id": "central-pawn",
+      "label": "Central pawn",
+      "detail": "White to move: win with king and pawn",
+      "playerSide": "w",
+      "setup": { "fen": "4k3/8/4K3/4P3/8/8/8/8 w - - 0 1" },
+      "temperature": { "mode": "argmax" },
+      "solution": {
+        "pgn": "[SetUp \"1\"]\n[FEN \"4k3/8/4K3/4P3/8/8/8/8 w - - 0 1\"]\n[Result \"*\"]\n\n1. Kd6 Kf7 2. e6+ Ke8 3. e7 Kf7 4. Kd7 Kg8 5. e8=Q+ *",
+        "moves": ["1.Kd6", "Kf7", "2.e6+", "Ke8", "3.e7", "Kf7", "4.Kd7", "Kg8", "5.e8=Q+"],
+        "explanation": "White steps diagonally to keep opposition, gets the king in front of the pawn, then advances only when the king can support promotion. After 3.e7, White uses Kd7 to protect the promotion square, and e8=Q finishes the win."
+      }
+    }
+  ]
+}

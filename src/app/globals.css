@@ -1,0 +1,310 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4f4f5;
+  --foreground: #18181b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "tnum" 1, "cv02" 1, "cv03" 1;
+  letter-spacing: 0;
+}
+
+button,
+select,
+input {
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease, opacity 150ms ease;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+input[type="range"] {
+  accent-color: #047857;
+}
+
+* {
+  scrollbar-color: #a1a1aa transparent;
+  scrollbar-width: thin;
+}
+
+.cg-wrap {
+  width: 100%;
+}
+
+.cg-wrap cg-board {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: #e3e8e3;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'%3E%3Crect width='2' height='2' fill='%23e3e8e3'/%3E%3Crect x='1' width='1' height='1' fill='%23657a70'/%3E%3Crect y='1' width='1' height='1' fill='%23657a70'/%3E%3C/svg%3E");
+  background-size: 25% 25%;
+  box-shadow: inset 0 0 0 1px rgba(63, 63, 70, 0.58);
+}
+
+.cg-board square.cg-safe {
+  background: rgba(52, 211, 153, 0.28);
+}
+
+.cg-board square.cg-danger {
+  background: rgba(244, 63, 94, 0.28);
+}
+
+.cg-board square.cg-contested {
+  background: rgba(250, 204, 21, 0.33);
+}
+
+.cg-board square.check {
+  background: radial-gradient(
+    circle at center,
+    rgba(239, 68, 68, 0.58) 0%,
+    rgba(220, 38, 38, 0.38) 38%,
+    rgba(185, 28, 28, 0.12) 58%,
+    transparent 74%
+  );
+  animation: king-check-glow 1.7s ease-in-out infinite;
+}
+
+@keyframes king-check-glow {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cg-board square.check {
+    animation: none;
+  }
+}
+
+.checkmate-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow:
+    inset 0 0 0 5px rgba(24, 24, 27, 0.9),
+    inset 0 0 90px 24px rgba(24, 24, 27, 0.42);
+  cursor: pointer;
+  z-index: 20;
+  animation: checkmate-arrival 500ms ease-out both;
+}
+
+.checkmate-result {
+  display: grid;
+  min-width: 44%;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(24, 24, 27, 0.9);
+  padding: 14px 28px;
+  box-shadow: 0 14px 36px rgba(24, 24, 27, 0.38);
+  color: white;
+  text-align: center;
+}
+
+.checkmate-result span {
+  color: #6ee7b7;
+  font-size: clamp(11px, 1.6vw, 16px);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.checkmate-result strong {
+  margin-top: 3px;
+  font-size: clamp(18px, 3vw, 32px);
+  line-height: 1.1;
+}
+
+@keyframes checkmate-arrival {
+  from {
+    opacity: 0;
+    transform: scale(1.035);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkmate-overlay {
+    animation: none;
+  }
+}
+
+.move-safety-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.move-quality-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 12;
+}
+
+.move-quality-square {
+  position: absolute;
+  width: 12.5%;
+  height: 12.5%;
+  pointer-events: none;
+}
+
+.move-quality-badge {
+  position: absolute;
+  top: 6%;
+  right: 6%;
+  display: grid;
+  width: 32%;
+  min-width: 16px;
+  max-width: 28px;
+  aspect-ratio: 1 / 1;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(24, 24, 27, 0.28);
+  font-size: clamp(10px, 1.8vmin, 16px);
+  line-height: 1;
+}
+
+.move-quality-badge--book {
+  background: rgba(224, 242, 254, 0.94);
+  color: #0369a1;
+}
+
+.move-quality-badge--strong {
+  background: rgba(220, 252, 231, 0.94);
+  color: #047857;
+}
+
+.move-quality-badge--neutral {
+  background: rgba(244, 244, 245, 0.94);
+  color: #3f3f46;
+}
+
+.move-quality-badge--warning {
+  background: rgba(254, 243, 199, 0.96);
+  color: #b45309;
+}
+
+.move-quality-badge--bad {
+  background: rgba(254, 226, 226, 0.96);
+  color: #be123c;
+}
+
+.move-history-label {
+  display: inline-flex;
+  width: 86px;
+  height: 17px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.move-history-label--pending {
+  color: #a1a1aa;
+  text-transform: uppercase;
+}
+
+.move-history-label--empty {
+  visibility: hidden;
+}
+
+.move-history-label.move-quality-badge--book {
+  border-color: #bae6fd;
+}
+
+.move-history-label.move-quality-badge--strong {
+  border-color: #bbf7d0;
+}
+
+.move-history-label.move-quality-badge--neutral {
+  border-color: #e4e4e7;
+}
+
+.move-history-label.move-quality-badge--warning {
+  border-color: #fde68a;
+}
+
+.move-history-label.move-quality-badge--bad {
+  border-color: #fecdd3;
+}
+
+.cg-wrap.move-safety-enabled cg-board square.move-dest,
+.cg-wrap.move-safety-enabled cg-board square.oc.move-dest,
+.cg-wrap.move-safety-enabled cg-board square.move-dest:hover {
+  background: transparent;
+}
+
+.move-safety-square {
+  position: absolute;
+  display: grid;
+  width: 12.5%;
+  height: 12.5%;
+  place-items: center;
+  pointer-events: none;
+}
+
+.move-safety-icon {
+  display: block;
+  width: 54%;
+  height: 54%;
+  pointer-events: none;
+  opacity: 0.43;
+}
+
+.move-safety-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.move-safety-icon--danger {
+  color: #dc2626;
+}
+
+.move-safety-icon--contested {
+  color: #e0a800;
+  opacity: 0.49;
+}
+
+.move-safety-icon--safe {
+  color: #059669;
+}

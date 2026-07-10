@@ -1,0 +1,21 @@
+{
+  "id": "triangulation",
+  "title": "Triangulation",
+  "description": "Lose a tempo with your king and return to the key position with the opponent forced to move.",
+  "category": "Pawn endgame",
+  "variants": [
+    {
+      "id": "central-zugzwang",
+      "label": "Central zugzwang",
+      "detail": "White to move: find the waiting maneuver",
+      "playerSide": "w",
+      "setup": { "fen": "8/2pkp3/8/3K4/2P1P3/8/8/8 w - - 0 1" },
+      "temperature": { "mode": "argmax" },
+      "solution": {
+        "pgn": "[SetUp \"1\"]\n[FEN \"8/2pkp3/8/3K4/2P1P3/8/8/8 w - - 0 1\"]\n[Result \"*\"]\n\n1. Kc5 Ke6 2. Kc6 *",
+        "moves": ["1.Kc5", "Ke6", "2.Kc6"],
+        "explanation": "Use the spare king route to transfer the move and enter on the queenside while Black is tied to both pawns."
+      }
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "traxler",
+  "title": "Play the Traxler",
+  "description": "Take Black and counterattack the Knight Attack with the Traxler.",
+  "category": "Counterattack",
+  "variants": [
+    {
+      "id": "knight-attack",
+      "label": "Knight Attack",
+      "detail": "Black to move after 4.Ng5",
+      "playerSide": "b",
+      "setup": { "pgn": "[Event \"Traxler Counterattack\"]\n[Result \"*\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 *" },
+      "temperature": { "mode": "argmax" },
+      "solution": {
+        "pgn": "[Event \"Traxler Solution\"]\n[Result \"*\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 Bc5 5. Nxf7 Bxf2+ 6. Kxf2 Nxe4+ 7. Kg1 Qh4 *",
+        "moves": [
+          "4...Bc5!",
+          "5.Nxf7",
+          "Bxf2+",
+          "6.Kxf2",
+          "Nxe4+",
+          "7.Kg1",
+          "Qh4"
+        ],
+        "explanation": "The Traxler ignores the attack on f7 and immediately counterattacks f2. If White grabs on f7, Black sacrifices the bishop with Bxf2+, drags the king forward, then follows with Nxe4+ and Qh4. The point is not to win material immediately, but to pull White’s king into the open and flood the position with threats."
+      }
+    }
+  ]
+}
