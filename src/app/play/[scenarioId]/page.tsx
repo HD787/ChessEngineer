@@ -502,8 +502,16 @@ function classifyMoveLabel({
   const mover = before.state.turn;
   const beforeValue = stockfishValueForSide(beforeEval, mover);
   const afterValue = stockfishValueForSide(afterEval, mover);
+  const beforeMate = mateForSide(beforeEval, mover);
   const afterMate = mateForSide(afterEval, mover);
   if (afterMate !== null && afterMate < 0) {
+    if (beforeMate !== null && beforeMate < 0) {
+      const mateProgress = Math.abs(beforeMate) - Math.abs(afterMate);
+      if (mateProgress <= 1) {
+        return beforeEval.bestmove === uci ? MOVE_LABELS.best : MOVE_LABELS.good;
+      }
+      return MOVE_LABELS.mistake;
+    }
     return Math.abs(afterMate) <= 5 ? MOVE_LABELS.blunder : MOVE_LABELS.inaccuracy;
   }
   const loss = Math.max(0, beforeValue - afterValue);
