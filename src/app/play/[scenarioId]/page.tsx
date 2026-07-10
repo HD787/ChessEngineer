@@ -6,6 +6,7 @@ import { Chess } from "chess.js";
 import { Chessground } from "chessground";
 import type { Api } from "chessground/api";
 import type { Config } from "chessground/config";
+import type { DrawShape } from "chessground/draw";
 import type { Key, Piece as GroundPiece } from "chessground/types";
 import openingData from "../../../data/openings.json";
 import { scenarios as scenarioData } from "../../../data/scenarios";
@@ -121,6 +122,10 @@ type MoveLabel = {
   text: string;
   symbol: string;
   title: string;
+};
+type BestMoveArrow = {
+  from: Square;
+  to: Square;
 };
 type ScenarioVariant = {
   id: string;
@@ -284,6 +289,8 @@ const ENGINE_DELAY_MAX_MS = 1100;
 const EVAL_DEPTH = 7;
 const MOVE_DEPTH = 6;
 const MOVE_LABEL_DEPTH = 7;
+const BEST_MOVES_DEPTH = 9;
+const BEST_MOVES_COUNT = 3;
 const MOVE_LABELS: Record<MoveLabelId, MoveLabel> = {
   book: {
     id: "book",
@@ -580,6 +587,8 @@ export default function GamePage() {
   const [moveLabels, setMoveLabels] = useState<Record<number, MoveLabel>>({});
   const [moveEvalCache, setMoveEvalCache] = useState<Record<string, StockfishResult>>({});
   const [visibleBoardMoveLabelPly, setVisibleBoardMoveLabelPly] = useState<number | null>(null);
+  const [bestMoveArrows, setBestMoveArrows] = useState<BestMoveArrow[]>([]);
+  const [bestMovesThinking, setBestMovesThinking] = useState(false);
   const [dismissedCheckmateFen, setDismissedCheckmateFen] = useState<string | null>(null);
 
   const workerRef = useRef<Worker | null>(null);
@@ -611,6 +620,8 @@ export default function GamePage() {
   const browserMoveEngineRef = useRef<BrowserStockfish | null>(null);
   const browserEvalEngineRef = useRef<BrowserStockfish | null>(null);
   const browserMoveLabelEngineRef = useRef<BrowserStockfish | null>(null);
+  const browserBestMovesEngineRef = useRef<BrowserStockfish | null>(null);
+  const bestMovesRequestFenRef = useRef<string | null>(null);
 
   useEffect(() => {
     activeModeRef.current = activeMode;
@@ -626,6 +637,7 @@ export default function GamePage() {
       browserMoveEngineRef.current?.terminate();
       browserEvalEngineRef.current?.terminate();
       browserMoveLabelEngineRef.current?.terminate();
+      browserBestMovesEngineRef.current?.terminate();
     };
   }, []);
 
@@ -859,6 +871,47 @@ export default function GamePage() {
   function swapPlayerColors() {
     setWhiteController(blackController);
     setBlackController(whiteController);
+  }
+
+  function clearBestMoveArrows() {
+    bestMovesRequestFenRef.current = null;
+    setBestMoveArrows([]);
+    setBestMovesThinking(false);
+  }
+
+  async function showBestMoves() {
+    if (!activeState || activeState.isCheckmate || activeState.isDraw || positionEditor) return;
+    const fen = activeState.fen;
+    bestMovesRequestFenRef.current = fen;
+    setBestMovesThinking(true);
+    setBestMoveArrows([]);
+    const engine = browserBestMovesEngineRef.current ?? new BrowserStockfish();
+    browserBestMovesEngineRef.current = engine;
+
+    try {
+      const result = await engine.analyze(fen, {
+        depth: BEST_MOVES_DEPTH,
+        multipv: BEST_MOVES_COUNT,
+      });
+      if (bestMovesRequestFenRef.current !== fen || activeStateRef.current?.fen !== fen) return;
+      const moves = (result.principalMoves.length > 0 ? result.principalMoves : result.bestmove ? [result.bestmove] : [])
+        .filter((move) => /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(move))
+        .slice(0, BEST_MOVES_COUNT);
+      setBestMoveArrows(
+        moves.map((move) => ({
+          from: move.slice(0, 2) as Square,
+          to: move.slice(2, 4) as Square,
+        })),
+      );
+    } catch (reason) {
+      if (bestMovesRequestFenRef.current === fen) {
+        setError(reason instanceof Error ? reason.message : "Could not find best moves.");
+      }
+    } finally {
+      if (bestMovesRequestFenRef.current === fen) {
+        setBestMovesThinking(false);
+      }
+    }
   }
 
   useEffect(() => {
@@ -1203,6 +1256,15 @@ export default function GamePage() {
     });
   }, [activeController, activeState, isFlipped, isIntroPlaying, isReviewing, isSolutionMode, legalTargets, selected, legalSafety, overlaySide, overlayClass, positionEditor, showControlOverlay, showOccupiedOnly, showOwnOccupiedOnly]);
 
+  useEffect(() => {
+    const shapes: DrawShape[] = bestMoveArrows.map((arrow) => ({
+      orig: arrow.from,
+      dest: arrow.to,
+      brush: "paleGreen",
+    }));
+    groundRef.current?.setAutoShapes(shapes);
+  }, [bestMoveArrows]);
+
   async function requestLegalTargets(from: Square) {
     const synced = await ensureWorkerAtActiveState();
     if (!synced) return;
@@ -1219,6 +1281,7 @@ export default function GamePage() {
   }
 
   function applyEditedState(nextState: Snapshot) {
+    clearBestMoveArrows();
     setState(nextState);
     setTimeline([{ ply: 0, san: null, uci: null, state: nextState }]);
     setCurrentPly(0);
@@ -1291,6 +1354,7 @@ export default function GamePage() {
   }
 
   async function requestMove(from: Square, to: Square) {
+    clearBestMoveArrows();
     const moveKey = `${activeState?.fen}:${from}:${to}`;
     if (moveInFlightRef.current === moveKey) return false;
     moveInFlightRef.current = moveKey;
@@ -1484,6 +1548,7 @@ export default function GamePage() {
   });
 
   async function handleSquareClick(targetSquare: Square) {
+    clearBestMoveArrows();
     setError(null);
     if (!activeState || isIntroPlaying || isSolutionMode) return;
     if (positionEditor) {
@@ -1605,6 +1670,7 @@ export default function GamePage() {
 
   function goToPly(ply: number) {
     if (!timeline || isIntroPlaying) return;
+    clearBestMoveArrows();
     setCurrentPly(Math.max(0, Math.min(timeline.length - 1, ply)));
     setSelected(null);
     setLegalTargets(new Set());
@@ -1782,6 +1848,8 @@ export default function GamePage() {
           activeVariant={activeVariant}
           isSolutionMode={isSolutionMode}
           isReviewing={isReviewing}
+          bestMovesThinking={bestMovesThinking}
+          canShowBestMoves={Boolean(activeState && !activeState.isCheckmate && !activeState.isDraw && !positionEditor)}
           moveHistoryRef={moveHistoryRef}
           moveRows={moveRows}
           currentPly={currentPly}
@@ -1795,6 +1863,7 @@ export default function GamePage() {
           onDeleteSelectedPiece={() => void deleteSelectedPiece()}
           onShowSolutionTimeline={() => void showSolutionTimeline()}
           onReturnFromSolution={returnFromSolution}
+          onShowBestMoves={() => void showBestMoves()}
           onGoToPly={goToPly}
           renderHistoryMoveLabel={renderHistoryMoveLabel}
         />

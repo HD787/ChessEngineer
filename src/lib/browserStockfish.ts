@@ -1,5 +1,6 @@
 export type StockfishResult = {
   bestmove: string | null;
+  principalMoves: string[];
   scoreCp: number | null;
   mate: number | null;
 };
@@ -7,6 +8,7 @@ export type StockfishResult = {
 type AnalyzeOptions = {
   depth?: number;
   movetime?: number;
+  multipv?: number;
 };
 
 type PendingRequest = {
@@ -35,6 +37,7 @@ export class BrowserStockfish {
   private active: PendingRequest | null = null;
   private latestScoreCp: number | null = null;
   private latestMate: number | null = null;
+  private latestPrincipalMoves = new Map<number, string>();
 
   constructor(private readonly scriptPath = "/stockfish/stockfish-18-lite-single.js") {}
 
@@ -64,6 +67,12 @@ export class BrowserStockfish {
     this.active = request;
     this.latestScoreCp = null;
     this.latestMate = null;
+    this.latestPrincipalMoves.clear();
+    if (request.options.multipv) {
+      this.worker.postMessage(`setoption name MultiPV value ${Math.max(1, request.options.multipv)}`);
+    } else {
+      this.worker.postMessage("setoption name MultiPV value 1");
+    }
     this.worker.postMessage(`position fen ${request.fen}`);
     const go =
       typeof request.options.movetime === "number"
@@ -122,6 +131,9 @@ export class BrowserStockfish {
     const bestmove = line.split(/\s+/)[1] ?? null;
     request.resolve({
       bestmove: bestmove === "(none)" ? null : bestmove,
+      principalMoves: Array.from(this.latestPrincipalMoves.entries())
+        .sort(([left], [right]) => left - right)
+        .map(([, move]) => move),
       scoreCp: this.latestScoreCp,
       mate: this.latestMate,
     });
@@ -130,15 +142,21 @@ export class BrowserStockfish {
   }
 
   private readScore(line: string) {
+    const multipv = Number(line.match(/\bmultipv (\d+)/)?.[1] ?? 1);
+    const pv = line.match(/\bpv\s+([a-h][1-8][a-h][1-8][qrbn]?)/);
+    if (pv) {
+      this.latestPrincipalMoves.set(multipv, pv[1]);
+    }
+
     const cp = line.match(/\bscore cp (-?\d+)/);
-    if (cp && this.active) {
+    if (cp && this.active && multipv === 1) {
       this.latestScoreCp = scoreFromWhitePerspective(this.active.fen, Number(cp[1]));
       this.latestMate = null;
       return;
     }
 
     const mate = line.match(/\bscore mate (-?\d+)/);
-    if (mate && this.active) {
+    if (mate && this.active && multipv === 1) {
       this.latestMate = mateFromWhitePerspective(this.active.fen, Number(mate[1]));
       this.latestScoreCp = null;
     }

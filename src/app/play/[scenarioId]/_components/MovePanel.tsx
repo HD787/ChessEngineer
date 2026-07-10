@@ -44,6 +44,8 @@ type Props = {
   activeVariant: ScenarioVariant | undefined;
   isSolutionMode: boolean;
   isReviewing: boolean;
+  bestMovesThinking: boolean;
+  canShowBestMoves: boolean;
   moveHistoryRef: RefObject<HTMLDivElement | null>;
   moveRows: MoveRow[];
   currentPly: number;
@@ -57,6 +59,7 @@ type Props = {
   onDeleteSelectedPiece: () => void;
   onShowSolutionTimeline: () => void;
   onReturnFromSolution: () => void;
+  onShowBestMoves: () => void;
   onGoToPly: (ply: number) => void;
   renderHistoryMoveLabel: (ply: number | null) => ReactNode;
 };
@@ -70,6 +73,8 @@ export function MovePanel({
   activeVariant,
   isSolutionMode,
   isReviewing,
+  bestMovesThinking,
+  canShowBestMoves,
   moveHistoryRef,
   moveRows,
   currentPly,
@@ -83,6 +88,7 @@ export function MovePanel({
   onDeleteSelectedPiece,
   onShowSolutionTimeline,
   onReturnFromSolution,
+  onShowBestMoves,
   onGoToPly,
   renderHistoryMoveLabel,
 }: Props) {
@@ -185,15 +191,25 @@ export function MovePanel({
                   <p className="text-sm text-zinc-500">Starting position</p>
                 )}
               </div>
-              {activeVariant?.solution ? (
+              <div className="flex shrink-0 items-center gap-2">
                 <button
                   type="button"
-                  onClick={isSolutionMode ? onReturnFromSolution : onShowSolutionTimeline}
-                  className="shrink-0 rounded-md border border-emerald-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+                  onClick={onShowBestMoves}
+                  disabled={!canShowBestMoves || bestMovesThinking}
+                  className="rounded-md border border-emerald-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:border-zinc-200 disabled:text-zinc-300 disabled:hover:bg-white"
                 >
-                  {isSolutionMode ? "Back to game" : "Reveal solution"}
+                  {bestMovesThinking ? "Finding..." : "Show best moves"}
                 </button>
-              ) : null}
+                {activeVariant?.solution ? (
+                  <button
+                    type="button"
+                    onClick={isSolutionMode ? onReturnFromSolution : onShowSolutionTimeline}
+                    className="rounded-md border border-emerald-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+                  >
+                    {isSolutionMode ? "Back to game" : "Reveal solution"}
+                  </button>
+                ) : null}
+              </div>
             </div>
             {isSolutionMode && activeVariant?.solution ? (
               <div className="mt-2 border-t border-emerald-200 pt-2">
