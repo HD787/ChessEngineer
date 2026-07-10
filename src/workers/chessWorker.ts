@@ -65,6 +65,13 @@ let game = new Chess();
 const files = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
 const ranks = ["8", "7", "6", "5", "4", "3", "2", "1"] as const;
 
+function attackerCanLegallyCapture(source: Chess, from: Square, target: Square, defendingSide: "w" | "b") {
+  const attacker = source.get(from);
+  if (!attacker) return false;
+  if (attacker.type !== "k") return true;
+  return source.attackers(target, defendingSide).filter((square) => square !== target).length === 0;
+}
+
 function serializeBoard(): BoardState {
   return game.board().map((rank) =>
     rank.map((piece) => {
@@ -280,8 +287,10 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
 
         const target = move.to as Square;
         const opponent = piece.color === "w" ? "b" : "w";
-        const attacked = next.isAttacked(target, opponent);
         const defended = next.attackers(target, piece.color).length > 0;
+        const attacked = next
+          .attackers(target, opponent)
+          .some((attacker) => attackerCanLegallyCapture(next, attacker, target, piece.color));
         legalSafety[target] = { attacked, defended };
       }
 
