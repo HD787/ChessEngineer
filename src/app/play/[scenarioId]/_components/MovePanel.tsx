@@ -105,20 +105,32 @@ export function MovePanel({
             </span>
           ) : null}
         </div>
-        {activeMode === "sandbox" ? (
-          <button
-            type="button"
-            onClick={() => onTogglePositionEditor(!positionEditor)}
-            disabled={!positionEditor && isReviewing}
-            className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-              positionEditor
-                ? "bg-zinc-900 text-white hover:bg-zinc-700"
-                : "border border-zinc-300 hover:bg-zinc-100 disabled:border-zinc-200 disabled:text-zinc-300"
-            }`}
-          >
-            {positionEditor ? "Done" : "Edit Position"}
-          </button>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-2">
+          {!positionEditor ? (
+            <button
+              type="button"
+              onClick={onShowBestMoves}
+              disabled={!canShowBestMoves || bestMovesThinking}
+              className="rounded-md border border-emerald-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:border-zinc-200 disabled:text-zinc-300 disabled:hover:bg-white"
+            >
+              {bestMovesThinking ? "Finding..." : "Best moves"}
+            </button>
+          ) : null}
+          {activeMode === "sandbox" ? (
+            <button
+              type="button"
+              onClick={() => onTogglePositionEditor(!positionEditor)}
+              disabled={!positionEditor && isReviewing}
+              className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
+                positionEditor
+                  ? "bg-zinc-900 text-white hover:bg-zinc-700"
+                  : "border border-zinc-300 hover:bg-zinc-100 disabled:border-zinc-200 disabled:text-zinc-300"
+              }`}
+            >
+              {positionEditor ? "Done" : "Edit Position"}
+            </button>
+          ) : null}
+        </div>
       </div>
       {positionEditor ? (
         <div className="mt-4 flex min-h-0 flex-1 flex-col">
@@ -194,14 +206,6 @@ export function MovePanel({
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onShowBestMoves}
-                  disabled={!canShowBestMoves || bestMovesThinking}
-                  className="rounded-md border border-emerald-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:border-zinc-200 disabled:text-zinc-300 disabled:hover:bg-white"
-                >
-                  {bestMovesThinking ? "Finding..." : "Show best moves"}
-                </button>
                 {activeVariant?.solution ? (
                   <button
                     type="button"

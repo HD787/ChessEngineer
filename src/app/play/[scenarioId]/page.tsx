@@ -107,6 +107,7 @@ type TemperatureMode = "optimal" | "argmax" | "focused" | "human" | "loose";
 type Opening = { eco: string; name: string };
 type MoveLabelId =
   | "book"
+  | "solution"
   | "best"
   | "excellent"
   | "great"
@@ -168,11 +169,11 @@ function openingPositionKey(fen: string): string {
 const trainingModes = scenarioData as TrainingScenario[];
 
 const temperatureOptions: Array<{ id: TemperatureMode; label: string }> = [
-  { id: "optimal", label: "Optimal · 0 after move 3" },
-  { id: "argmax", label: "Argmax · 0" },
-  { id: "focused", label: "Focused · 0.35" },
-  { id: "human", label: "Human-like · 0.8" },
-  { id: "loose", label: "Loose · 1.0" },
+  { id: "optimal", label: "Optimal · opening variety only" },
+  { id: "argmax", label: "Top policy move · temp 0" },
+  { id: "focused", label: "Low blunder chance · temp 0.35" },
+  { id: "human", label: "Normal blunder chance · temp 0.8" },
+  { id: "loose", label: "High blunder chance · temp 1.0" },
 ];
 
 function requestTemperature(mode: TemperatureMode, fen: string): number {
@@ -291,12 +292,19 @@ const MOVE_DEPTH = 6;
 const MOVE_LABEL_DEPTH = 7;
 const BEST_MOVES_DEPTH = 9;
 const BEST_MOVES_COUNT = 3;
+const OPENING_BOOK_MAX_PLY = 16;
 const MOVE_LABELS: Record<MoveLabelId, MoveLabel> = {
   book: {
     id: "book",
     text: "Book",
     symbol: "📖",
     title: "Recognized opening database move.",
+  },
+  solution: {
+    id: "solution",
+    text: "Line",
+    symbol: "📖",
+    title: "Matches the accepted scenario line.",
   },
   best: {
     id: "best",
@@ -417,7 +425,25 @@ function legalMoveCount(fen: string): number {
 }
 
 function isOpeningBookMove(afterFen: string, ply: number): boolean {
-  return ply <= 24 && Boolean(openings[openingPositionKey(afterFen)]);
+  return ply <= OPENING_BOOK_MAX_PLY && Boolean(openings[openingPositionKey(afterFen)]);
+}
+
+function normalizedSan(value: string | null | undefined): string {
+  return (value ?? "").replace(/^\d+\.(?:\.\.)?/, "").replace(/[!?]+/g, "").trim();
+}
+
+function isScenarioSolutionMove(solutionMoves: string[] | undefined, san: string | null): boolean {
+  if (!solutionMoves || solutionMoves.length === 0) return false;
+  const move = normalizedSan(san);
+  return Boolean(move) && solutionMoves.some((solutionMove) => normalizedSan(solutionMove) === move);
+}
+
+function moveLabelKey(timeline: TimelineEntry[] | null, ply: number): string | null {
+  if (!timeline || ply <= 0) return null;
+  const before = timeline[ply - 1];
+  const after = timeline[ply];
+  if (!before || !after || !after.uci) return null;
+  return `${before.state.fen}|${after.uci}|${after.state.fen}`;
 }
 
 function isApparentSacrifice(beforeFen: string, uci: string): boolean {
@@ -511,16 +537,6 @@ function classifyMoveLabel({
   const afterValue = stockfishValueForSide(afterEval, mover);
   const beforeMate = mateForSide(beforeEval, mover);
   const afterMate = mateForSide(afterEval, mover);
-  if (afterMate !== null && afterMate < 0) {
-    if (beforeMate !== null && beforeMate < 0) {
-      const mateProgress = Math.abs(beforeMate) - Math.abs(afterMate);
-      if (mateProgress <= 1) {
-        return beforeEval.bestmove === uci ? MOVE_LABELS.best : MOVE_LABELS.good;
-      }
-      return MOVE_LABELS.mistake;
-    }
-    return Math.abs(afterMate) <= 5 ? MOVE_LABELS.blunder : MOVE_LABELS.inaccuracy;
-  }
   const loss = Math.max(0, beforeValue - afterValue);
   const isBestMove = beforeEval.bestmove === uci;
   const freePiece = hangsMovedPieceForFree(before.state.fen, uci);
@@ -534,7 +550,19 @@ function classifyMoveLabel({
       ? MOVE_LABELS.great
       : MOVE_LABELS.best;
   }
-  if (freePiece && freePiece.value >= 5 && (freePiece.withCheck || loss >= 100)) return MOVE_LABELS.blunder;
+
+  if (afterMate !== null && afterMate < 0) {
+    if (beforeMate !== null && beforeMate < 0) {
+      const mateProgress = Math.abs(beforeMate) - Math.abs(afterMate);
+      if (mateProgress <= 1) {
+        return beforeEval.bestmove === uci ? MOVE_LABELS.best : MOVE_LABELS.good;
+      }
+      return MOVE_LABELS.mistake;
+    }
+    return Math.abs(afterMate) <= 5 ? MOVE_LABELS.blunder : MOVE_LABELS.inaccuracy;
+  }
+
+  if (freePiece && freePiece.value >= 5 && loss >= 100) return MOVE_LABELS.blunder;
   if (loss <= 15) return MOVE_LABELS.excellent;
   if (loss <= 50) return MOVE_LABELS.good;
   if (loss <= 120) return MOVE_LABELS.inaccuracy;
@@ -584,7 +612,7 @@ export default function GamePage() {
   const [showEvalBar, setShowEvalBar] = useState(false);
   const [evalResult, setEvalResult] = useState<StockfishResult | null>(null);
   const [evalThinking, setEvalThinking] = useState(false);
-  const [moveLabels, setMoveLabels] = useState<Record<number, MoveLabel>>({});
+  const [moveLabels, setMoveLabels] = useState<Record<string, MoveLabel>>({});
   const [moveEvalCache, setMoveEvalCache] = useState<Record<string, StockfishResult>>({});
   const [visibleBoardMoveLabelPly, setVisibleBoardMoveLabelPly] = useState<number | null>(null);
   const [bestMoveArrows, setBestMoveArrows] = useState<BestMoveArrow[]>([]);
@@ -720,9 +748,10 @@ export default function GamePage() {
     activeScenario?.variants.find((variant) => variant.id === activeVariantId) ??
     activeScenario?.variants[0];
   const displayedMove = timeline?.[currentPly] ?? null;
+  const displayedMoveLabelKey = moveLabelKey(timeline, currentPly);
   const displayedMoveLabel =
-    showMoveQualityLabels && visibleBoardMoveLabelPly === currentPly && currentPly > 0
-      ? moveLabels[currentPly]
+    showMoveQualityLabels && visibleBoardMoveLabelPly === currentPly && displayedMoveLabelKey
+      ? moveLabels[displayedMoveLabelKey]
       : undefined;
   const displayedMoveSquare = displayedMove?.uci ? (displayedMove.uci.slice(2, 4) as Square) : null;
   const showCheckmateOverlay =
@@ -1066,16 +1095,22 @@ export default function GamePage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setMoveLabels((current) => {
-        const next: Record<number, MoveLabel> = {};
-        for (const [ply, label] of Object.entries(current)) {
-          const index = Number(ply);
-          if (index <= lastPly) next[index] = label;
+        const validKeys = new Set<string>();
+        if (timeline) {
+          for (let ply = 1; ply <= lastPly; ply += 1) {
+            const key = moveLabelKey(timeline, ply);
+            if (key) validKeys.add(key);
+          }
+        }
+        const next: Record<string, MoveLabel> = {};
+        for (const [key, label] of Object.entries(current)) {
+          if (validKeys.has(key)) next[key] = label;
         }
         return next;
       });
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [lastPly, timelineSignature]);
+  }, [lastPly, timeline, timelineSignature]);
 
   useEffect(() => {
     if (isReviewing || isSolutionMode) return;
@@ -1088,7 +1123,8 @@ export default function GamePage() {
   }, [isReviewing, isSolutionMode, lastPly]);
 
   useEffect(() => {
-    if (!showMoveQualityLabels || currentPly <= 0 || !moveLabels[currentPly] || positionEditor) {
+    const key = moveLabelKey(timeline, currentPly);
+    if (!showMoveQualityLabels || currentPly <= 0 || !key || !moveLabels[key] || positionEditor) {
       const timer = window.setTimeout(() => setVisibleBoardMoveLabelPly(null), 0);
       return () => window.clearTimeout(timer);
     }
@@ -1101,7 +1137,7 @@ export default function GamePage() {
       window.clearTimeout(showTimer);
       window.clearTimeout(timer);
     };
-  }, [currentPly, moveLabels, positionEditor, showMoveQualityLabels]);
+  }, [currentPly, moveLabels, positionEditor, showMoveQualityLabels, timeline]);
 
   function runWorker(request: WorkerRequest): Promise<WorkerResponse> {
     return new Promise((resolve) => {
@@ -1480,7 +1516,7 @@ export default function GamePage() {
         browserMoveLabelEngineRef.current = engine;
         const cache = { ...moveEvalCache };
         const nextCache: Record<string, StockfishResult> = {};
-        const nextLabels: Record<number, MoveLabel> = {};
+        const nextLabels: Record<string, MoveLabel> = {};
         const startPly = Math.max(1, lastPly - 79);
 
         async function analyzeFen(fen: string) {
@@ -1492,24 +1528,29 @@ export default function GamePage() {
         }
 
         for (let ply = startPly; ply <= lastPly; ply += 1) {
-          if (cancelled || moveLabels[ply]) continue;
+          const labelKey = moveLabelKey(timeline, ply);
+          if (cancelled || !labelKey || moveLabels[labelKey]) continue;
           const before = timeline[ply - 1];
           const after = timeline[ply];
           if (!before || !after || !after.uci) continue;
 
+          if (isScenarioSolutionMove(activeVariant?.solution?.moves, after.san)) {
+            nextLabels[labelKey] = MOVE_LABELS.solution;
+            continue;
+          }
           if (isOpeningBookMove(after.state.fen, after.ply)) {
-            nextLabels[ply] = MOVE_LABELS.book;
+            nextLabels[labelKey] = MOVE_LABELS.book;
             continue;
           }
           if (legalMoveCount(before.state.fen) <= 1) {
-            nextLabels[ply] = MOVE_LABELS.forced;
+            nextLabels[labelKey] = MOVE_LABELS.forced;
             continue;
           }
 
           const beforeEval = await analyzeFen(before.state.fen);
           const afterEval = await analyzeFen(after.state.fen);
           if (cancelled) return;
-          nextLabels[ply] = classifyMoveLabel({ before, after, beforeEval, afterEval });
+          nextLabels[labelKey] = classifyMoveLabel({ before, after, beforeEval, afterEval });
         }
 
         if (cancelled) return;
@@ -1526,7 +1567,7 @@ export default function GamePage() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [lastPly, moveEvalCache, moveLabels, positionEditor, showMoveQualityLabels, timeline, timelineSignature]);
+  }, [activeVariant?.solution?.moves, lastPly, moveEvalCache, moveLabels, positionEditor, showMoveQualityLabels, timeline, timelineSignature]);
 
   useEffect(() => {
     moveHandlerRef.current = (orig, dest) => {
@@ -1713,7 +1754,7 @@ export default function GamePage() {
   }
 
   function moveLabelClass(label: MoveLabel) {
-    if (label.id === "book") return "move-quality-badge--book";
+    if (label.id === "book" || label.id === "solution") return "move-quality-badge--book";
     if (label.id === "best" || label.id === "excellent" || label.id === "great" || label.id === "brilliant") {
       return "move-quality-badge--strong";
     }
@@ -1743,7 +1784,8 @@ export default function GamePage() {
       return <span className="move-history-label move-history-label--empty" aria-hidden="true" />;
     }
 
-    const label = moveLabels[ply];
+    const key = moveLabelKey(timeline, ply);
+    const label = key ? moveLabels[key] : undefined;
     if (!label) {
       return <span className="move-history-label move-history-label--empty" aria-hidden="true" />;
     }
