@@ -140,6 +140,7 @@ type ScenarioVariant = {
   temperature: {
     mode: TemperatureMode;
   };
+  opponentModelId?: string;
   solution?: {
     moves: string[];
     explanation: string;
@@ -161,6 +162,48 @@ const browserStockfishModel: ServedModel = {
   name: "Browser Stockfish Lite",
   path: "browser",
 };
+
+function isBrowserStockfishModelId(modelId: string | null | undefined) {
+  return modelId === BROWSER_STOCKFISH_ID;
+}
+
+function easierModelScore(model: ServedModel, index: number): number {
+  const label = `${model.id} ${model.name}`.toLowerCase();
+  const eloRange = label.match(/(\d{3,4})\D+(\d{3,4})/);
+  if (eloRange) {
+    return (Number(eloRange[1]) + Number(eloRange[2])) / 2;
+  }
+  const elo = label.match(/\b(\d{3,4})\b/);
+  if (elo) {
+    return Number(elo[1]);
+  }
+  if (label.includes("v2")) return 700;
+  if (label.includes("650") || label.includes("750")) return 700;
+  if (label.includes("v3")) return 850;
+  return 1000 + index / 1000;
+}
+
+function preferredScenarioModelId(
+  availableModels: ServedModel[],
+  requestedModelId?: string,
+): string | undefined {
+  if (requestedModelId && availableModels.some((model) => model.id === requestedModelId)) {
+    return requestedModelId;
+  }
+
+  const servedModels = availableModels.filter((model) => !isBrowserStockfishModelId(model.id));
+  if (servedModels.length > 0) {
+    return servedModels
+      .map((model, index) => ({ model, score: easierModelScore(model, index) }))
+      .sort((left, right) => left.score - right.score)[0].model.id;
+  }
+
+  if (requestedModelId && isBrowserStockfishModelId(requestedModelId)) {
+    return BROWSER_STOCKFISH_ID;
+  }
+
+  return availableModels[0]?.id;
+}
 
 function openingPositionKey(fen: string): string {
   return fen.split(" ").slice(0, 4).join(" ");
@@ -369,7 +412,7 @@ const MOVE_LABELS: Record<MoveLabelId, MoveLabel> = {
 };
 
 function isBrowserStockfish(controller: PlayerController) {
-  return controller === BROWSER_STOCKFISH_ID;
+  return isBrowserStockfishModelId(controller);
 }
 
 function modelWebsocketUrl() {
@@ -983,21 +1026,27 @@ export default function GamePage() {
       try {
         const msg = JSON.parse(event.data) as EngineWsMessage;
         if (msg.type === "ready" || msg.type === "models") {
-          const availableModels = Array.isArray(msg.models) ? msg.models : [];
-          setModels(availableModels);
-          const fallback = msg.defaultModelId ?? availableModels[0]?.id;
+          const servedModels = Array.isArray(msg.models) ? msg.models : [];
+          setModels(servedModels);
+          const activeScenario = trainingModes.find((mode) => mode.id === activeModeRef.current);
+          const activeVariant = activeScenario?.variants.find(
+            (variant) => variant.id === activeVariantIdRef.current,
+          );
+          const fallback = preferredScenarioModelId(
+            [browserStockfishModel, ...servedModels],
+            activeVariant?.opponentModelId,
+          );
+          const useFallback = (value: PlayerController) =>
+            (value === "human" || isBrowserStockfish(value)) && fallback ? fallback : value;
           if (activeModeRef.current === "sandbox") {
-            setBlackController((value) => (value === "human" && fallback ? fallback : value));
+            setBlackController(useFallback);
           } else {
-            const activeScenario = trainingModes.find((mode) => mode.id === activeModeRef.current);
-            const playerSide = activeScenario?.variants.find(
-              (variant) => variant.id === activeVariantIdRef.current,
-            )?.playerSide;
+            const playerSide = activeVariant?.playerSide;
             if (playerSide === "w") {
               setWhiteController("human");
-              setBlackController((value) => (value === "human" && fallback ? fallback : value));
+              setBlackController(useFallback);
             } else {
-              setWhiteController((value) => (value === "human" && fallback ? fallback : value));
+              setWhiteController(useFallback);
               setBlackController("human");
             }
           }
@@ -1702,8 +1751,9 @@ export default function GamePage() {
     } else {
       const playerSide = variant?.playerSide ?? "b";
       if (!preserveControllers) {
-        setWhiteController(playerSide === "w" ? "human" : availableModels[0]?.id ?? "human");
-        setBlackController(playerSide === "b" ? "human" : availableModels[0]?.id ?? "human");
+        const fallback = preferredScenarioModelId(availableModels, variant?.opponentModelId);
+        setWhiteController(playerSide === "w" ? "human" : fallback ?? "human");
+        setBlackController(playerSide === "b" ? "human" : fallback ?? "human");
       }
       setIsFlipped(playerSide === "b");
     }
