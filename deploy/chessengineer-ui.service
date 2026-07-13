@@ -1,0 +1,20 @@
+[Unit]
+Description=Chess Engineer UI
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hd116527
+WorkingDirectory=/home/hd116527/ChessEngineer
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3101
+Environment=NEXT_PUBLIC_BASE_PATH=/chessengineer
+Environment=NEXT_PUBLIC_MODEL_WS_URL=/chessengineer/model-ws
+ExecStart=/home/hd116527/ChessEngineer/node_modules/.bin/next start -p 3101
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

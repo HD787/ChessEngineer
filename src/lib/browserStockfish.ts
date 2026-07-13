@@ -30,6 +30,11 @@ function mateFromWhitePerspective(fen: string, mate: number): number {
   return turnFromFen(fen) === "w" ? mate : -mate;
 }
 
+function stockfishWorkerPath(): string {
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH?.replace(/\/$/, "") ?? "";
+  return `${basePath}/stockfish/stockfish-18-lite-single.js`;
+}
+
 export class BrowserStockfish {
   private worker: Worker | null = null;
   private readyPromise: Promise<void> | null = null;
@@ -39,7 +44,7 @@ export class BrowserStockfish {
   private latestMate: number | null = null;
   private latestPrincipalMoves = new Map<number, string>();
 
-  constructor(private readonly scriptPath = "/stockfish/stockfish-18-lite-single.js") {}
+  constructor(private readonly scriptPath = stockfishWorkerPath()) {}
 
   analyze(fen: string, options: AnalyzeOptions = {}): Promise<StockfishResult> {
     return new Promise((resolve, reject) => {
