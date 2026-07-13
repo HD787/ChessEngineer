@@ -13,6 +13,7 @@ type TemperatureOption = {
 
 type Props = {
   className?: string;
+  scenarioTitle: string;
   status: string;
   error: string | null;
   availableModels: ServedModel[];
@@ -54,6 +55,7 @@ type Props = {
 
 export function GameSidebar({
   className = "",
+  scenarioTitle,
   status,
   error,
   availableModels,
@@ -94,13 +96,15 @@ export function GameSidebar({
 }: Props) {
   return (
     <aside className={`${className} min-h-0 rounded-lg border border-zinc-200 bg-white p-3 shadow-sm lg:overflow-y-auto`}>
-      <div className="flex items-center gap-2.5 border-b border-zinc-200 pb-3">
+      <div className="flex min-w-0 items-center gap-2.5 border-b border-zinc-200 pb-3">
         <div className="grid h-8 w-8 place-items-center rounded-md bg-emerald-700 text-base font-bold text-white">
           H
         </div>
-        <div>
+        <div className="min-w-0">
           <h1 className="text-base font-bold text-zinc-950">Chess Engineer</h1>
-          <p className="text-xs text-zinc-500">Model playground</p>
+          <p className="truncate text-xs text-zinc-500" title={scenarioTitle}>
+            {scenarioTitle}
+          </p>
         </div>
       </div>
       <div className="mt-3 space-y-3">

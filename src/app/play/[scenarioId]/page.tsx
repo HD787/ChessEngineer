@@ -432,10 +432,24 @@ function normalizedSan(value: string | null | undefined): string {
   return (value ?? "").replace(/^\d+\.(?:\.\.)?/, "").replace(/[!?]+/g, "").trim();
 }
 
-function isScenarioSolutionMove(solutionMoves: string[] | undefined, san: string | null): boolean {
+function setupPlyCount(variant: ScenarioVariant | undefined): number {
+  if (!variant?.setup.pgn) return 0;
+  try {
+    const game = new Chess();
+    game.loadPgn(variant.setup.pgn);
+    return game.history().length;
+  } catch {
+    return 0;
+  }
+}
+
+function isScenarioSolutionMove(variant: ScenarioVariant | undefined, ply: number, san: string | null): boolean {
+  const solutionMoves = variant?.solution?.moves;
   if (!solutionMoves || solutionMoves.length === 0) return false;
+  const solutionIndex = ply - setupPlyCount(variant) - 1;
+  if (solutionIndex < 0 || solutionIndex >= solutionMoves.length) return false;
   const move = normalizedSan(san);
-  return Boolean(move) && solutionMoves.some((solutionMove) => normalizedSan(solutionMove) === move);
+  return Boolean(move) && normalizedSan(solutionMoves[solutionIndex]) === move;
 }
 
 function moveLabelKey(timeline: TimelineEntry[] | null, ply: number): string | null {
@@ -1534,7 +1548,7 @@ export default function GamePage() {
           const after = timeline[ply];
           if (!before || !after || !after.uci) continue;
 
-          if (isScenarioSolutionMove(activeVariant?.solution?.moves, after.san)) {
+          if (isScenarioSolutionMove(activeVariant, after.ply, after.san)) {
             nextLabels[labelKey] = MOVE_LABELS.solution;
             continue;
           }
@@ -1567,7 +1581,7 @@ export default function GamePage() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [activeVariant?.solution?.moves, lastPly, moveEvalCache, moveLabels, positionEditor, showMoveQualityLabels, timeline, timelineSignature]);
+  }, [activeVariant, lastPly, moveEvalCache, moveLabels, positionEditor, showMoveQualityLabels, timeline, timelineSignature]);
 
   useEffect(() => {
     moveHandlerRef.current = (orig, dest) => {
@@ -1843,6 +1857,7 @@ export default function GamePage() {
         >
           <GameSidebar
             className="h-full min-h-0 overflow-y-auto overscroll-contain rounded-none lg:rounded-lg"
+            scenarioTitle={activeScenario?.title ?? "Sandbox"}
             status={status}
             error={error}
             availableModels={availableModels}
