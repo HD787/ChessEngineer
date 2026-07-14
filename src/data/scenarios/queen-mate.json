@@ -32,7 +32,7 @@
           "16.Kf3", "Kg1",
           "17.Qg2#"
         ],
-        "explanation": "White first uses repeated queen moves from knight-distance positions to shrink the black king’s box without stalemating. Once the king is trapped shuffling between h1 and g1, White stops checking with the queen, walks the king up to opposition, and only then delivers Qg2#."
+        "explanation": "White first uses repeated queen moves from knight-distance positions to shrink the black king’s box without stalemating. Once the king is trapped shuffling between h1 and g1, White leaves the queen in place, walks the king up to opposition, and only then delivers Qg2#."
       }
     }
   ]

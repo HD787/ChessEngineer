@@ -1,14 +1,16 @@
 # Chess Engineer Web UI
 
 Next.js chess training UI for playing against a local Python checkpoint server.
+A demo is hosted at https://henryderrick.com/chessengineer
 
 ## Run
-
+Clone the chess model server at https://github.com/HD787/ChessModelServer
+Download Models from https://huggingface.co/hd787
 Start the model websocket server from the repo root:
 
 ```bash
 human-chess-serve-ws \
-  --checkpoint-dir checkpoints/tournament-best-models \
+  --checkpoint-dir **DIRECTORY CONTAINING CHECKPOINTS**
   --host 127.0.0.1 \
   --port 8787
 ```
