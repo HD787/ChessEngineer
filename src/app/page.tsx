@@ -34,7 +34,9 @@ type TrainingScenario = {
 };
 
 const trainingModes = scenarioData as TrainingScenario[];
-const categoryOrder = Array.from(new Set(trainingModes.map((mode) => mode.category))).sort((a, b) =>
+const sandboxMode = trainingModes.find((mode) => mode.id === "sandbox");
+const scenarioModes = trainingModes.filter((mode) => mode.id !== "sandbox");
+const categoryOrder = Array.from(new Set(scenarioModes.map((mode) => mode.category))).sort((a, b) =>
   a.localeCompare(b),
 );
 
@@ -46,11 +48,12 @@ export default function Home() {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("All");
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>(() =>
-    Object.fromEntries(trainingModes.map((scenario) => [scenario.id, scenario.variants[0].id])),
+    Object.fromEntries(scenarioModes.map((scenario) => [scenario.id, scenario.variants[0].id])),
   );
+  const sandboxVariant = sandboxMode?.variants[0];
   const scenarioCards = useMemo(
     () =>
-      trainingModes
+      scenarioModes
         .filter((mode) => activeCategory === "All" || mode.category === activeCategory)
         .map((mode) => ({
           mode,
@@ -64,14 +67,75 @@ export default function Home() {
   return (
     <main className="ce-page-shell min-h-screen px-4 py-8 text-[var(--ce-ink)] sm:px-8 sm:py-12">
       <section className="mx-auto max-w-3xl">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="ce-brand-mark h-11 w-11 text-xl font-bold">
-            CE
+        <div className="mb-8 flex items-stretch justify-between gap-4">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="ce-brand-mark h-11 w-11 shrink-0 text-xl font-bold">
+              CE
+            </div>
+            <div className="min-w-0">
+              <h1 className="ce-title text-2xl">Chess Engineer</h1>
+              <p className="ce-muted text-sm font-medium">Choose a position to train</p>
+            </div>
           </div>
+          {sandboxMode && sandboxVariant ? (
+            <article
+              role="button"
+              tabIndex={0}
+              onClick={() => router.push(playPath(sandboxMode.id, sandboxVariant.id))}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  router.push(playPath(sandboxMode.id, sandboxVariant.id));
+                }
+              }}
+              className="scenario-card sandbox-mini-card group hidden min-h-24 w-[46%] min-w-72 cursor-pointer px-5 py-4 text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ce-green)] sm:flex sm:flex-col sm:justify-center"
+            >
+              <span className="block text-[0.62rem] font-black uppercase tracking-[0.08em] ce-positive">
+                Free board
+              </span>
+              <span className="ce-title mt-1 flex items-center justify-between gap-3 text-base">
+                Sandbox
+                <span className="scenario-card-arrow text-xl transition-transform group-hover:translate-x-1">
+                  {"›"}
+                </span>
+              </span>
+              <span className="ce-muted mt-1 block text-xs font-bold">
+                Play freely, edit positions, and test models.
+              </span>
+            </article>
+          ) : null}
+        </div>
+        {sandboxMode && sandboxVariant ? (
+          <article
+            role="button"
+            tabIndex={0}
+            onClick={() => router.push(playPath(sandboxMode.id, sandboxVariant.id))}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                router.push(playPath(sandboxMode.id, sandboxVariant.id));
+              }
+            }}
+            className="scenario-card sandbox-mini-card mb-5 cursor-pointer px-4 py-3 text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ce-green)] sm:hidden"
+          >
+            <span className="block text-[0.62rem] font-black uppercase tracking-[0.08em] ce-positive">
+              Free board
+            </span>
+            <span className="ce-title mt-1 flex items-center justify-between gap-3 text-base">
+              Sandbox
+              <span className="scenario-card-arrow text-xl">{"›"}</span>
+            </span>
+          </article>
+        ) : null}
+
+        <div className="mb-3 flex items-end justify-between gap-4 border-b border-[var(--ce-ink)] pb-2">
           <div>
-            <h1 className="ce-title text-2xl">Chess Engineer</h1>
-            <p className="ce-muted text-sm font-medium">Choose a position to train</p>
+            <p className="ce-section-title">Training library</p>
+            <h2 className="ce-title text-xl">Scenario drills</h2>
           </div>
+          <p className="ce-muted hidden text-xs font-bold uppercase tracking-[0.08em] sm:block">
+            Openings and endgames
+          </p>
         </div>
 
         <div className="mb-5 border border-[var(--ce-ink)] bg-[var(--ce-paper)] p-2">

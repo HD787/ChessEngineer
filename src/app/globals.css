@@ -274,6 +274,17 @@ input[type="range"] {
   font-family: Georgia, "Times New Roman", serif;
 }
 
+.sandbox-mini-card {
+  background:
+    linear-gradient(90deg, rgba(198, 145, 49, 0.11), transparent 42%),
+    linear-gradient(180deg, rgba(248, 241, 228, 0.98), rgba(239, 228, 210, 0.9));
+}
+
+.sandbox-mini-card::before {
+  width: 3px;
+  background: var(--ce-gold);
+}
+
 * {
   scrollbar-color: #a1a1aa transparent;
   scrollbar-width: thin;
