@@ -2,7 +2,7 @@
   "id": "triangulation",
   "title": "Triangulation",
   "description": "Lose a tempo with your king, return to the same position with the opponent to move, and force zugzwang.",
-  "category": "Pawn endgame",
+  "category": "Endgames",
   "variants": [
     {
       "id": "central-zugzwang",
@@ -37,5 +37,6 @@
         "explanation": "White cannot make progress immediately because Black holds the opposition. White plays Ke5, Kd4, and Kd5, returning to the original king square in three moves while Black returns in only two. The same position is reached with Black to move, placing Black in zugzwang. Black must yield ground, allowing White's king to penetrate and support the c-pawn's advance."
       }
     }
-  ]
+  ],
+  "shortDescription": "Pawn endgame"
 }

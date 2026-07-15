@@ -94,28 +94,28 @@ function PlayerCard({
   const advantageText = advantage > 0 ? `+${advantage}` : advantage < 0 ? `${advantage}` : "0";
 
   return (
-    <div className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 shadow-sm">
+    <div className="player-card border px-3 py-1.5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span
-            className={`h-8 w-8 shrink-0 rounded-md border ${
-              isWhite ? "border-zinc-300 bg-white" : "border-zinc-800 bg-zinc-900"
+            className={`h-8 w-8 shrink-0 border ${
+              isWhite ? "border-[#cfc4b2] bg-[var(--ce-cream)]" : "border-[var(--ce-ink)] bg-[var(--ce-ink)]"
             }`}
             aria-hidden="true"
           />
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase text-zinc-400">{player.side}</p>
+            <p className="ce-section-title text-[10px]">{player.side}</p>
             <div className="flex min-w-0 items-baseline gap-2">
-              <p className="truncate text-sm font-semibold text-zinc-900" title={player.label}>
+              <p className="ce-title truncate text-sm" title={player.label}>
                 {player.label}
               </p>
               <span
                 className={`shrink-0 text-xs font-semibold ${
                   advantage > 0
-                    ? "text-emerald-700"
+                    ? "ce-positive"
                     : advantage < 0
-                      ? "text-rose-700"
-                      : "text-zinc-500"
+                      ? "ce-negative"
+                    : "ce-muted"
                 }`}
                 title={`${pointTotal} captured material point${pointTotal === 1 ? "" : "s"}`}
               >
@@ -125,14 +125,14 @@ function PlayerCard({
           </div>
         </div>
         <div
-          className="flex max-w-[44%] shrink-0 items-center justify-end gap-1 overflow-hidden text-lg leading-none text-zinc-800"
+          className="flex max-w-[44%] shrink-0 items-center justify-end gap-1 overflow-hidden text-lg leading-none text-[var(--ce-ink)]"
           aria-label={`${player.side} captured pieces`}
         >
           {captured.length === 0 ? (
-            <span className="text-xs leading-6 text-zinc-400">0 pts</span>
+            <span className="text-xs font-medium leading-6 text-[var(--ce-heading-muted)]">0 pts</span>
           ) : (
             <>
-              <span className="mr-1 shrink-0 text-xs font-medium leading-5 text-zinc-500">
+              <span className="ce-muted mr-1 shrink-0 text-xs font-bold leading-5">
                 {pointTotal} pts
               </span>
               {captured.map((kind, index) => (
@@ -196,7 +196,7 @@ export function BoardArea({
           whiteMaterialAdvantage={whiteMaterialAdvantage}
         />
       </div>
-      <div className={`board-frame flex shrink-0 items-center justify-center overflow-hidden ${isReviewing ? "bg-amber-50" : ""}`}>
+      <div className={`board-frame flex shrink-0 items-center justify-center overflow-hidden ${isReviewing ? "bg-[#fbf1cf]" : ""}`}>
         <div
           className={`cg-wrap board-square overflow-hidden ${
             showMoveSafetyHints ? "move-safety-enabled" : ""

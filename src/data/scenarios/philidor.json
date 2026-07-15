@@ -2,7 +2,7 @@
   "id": "philidor",
   "title": "Philidor Position",
   "description": "Defend the draw by holding the sixth rank. When the pawn advances, switch immediately to rear checks.",
-  "category": "Rook endgame",
+  "category": "Endgames",
   "variants": [
     {
       "id": "standard-philidor",
@@ -27,5 +27,6 @@
         "explanation": "The defending rook stays on the sixth rank while the pawn remains on the fifth, preventing the attacking king from making progress. Once the pawn advances to the sixth rank, the rook immediately switches behind the pawn and begins checking from the rear. This transition is the defining idea of the Philidor defense and is what secures the draw."
       }
     }
-  ]
+  ],
+  "shortDescription": "Rook endgame"
 }

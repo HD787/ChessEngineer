@@ -340,73 +340,73 @@ const MOVE_LABELS: Record<MoveLabelId, MoveLabel> = {
   book: {
     id: "book",
     text: "Book",
-    symbol: "📖",
+    symbol: "BK",
     title: "Recognized opening database move.",
   },
   solution: {
     id: "solution",
     text: "Line",
-    symbol: "📖",
+    symbol: "LN",
     title: "Matches the accepted scenario line.",
   },
   best: {
     id: "best",
     text: "Best",
-    symbol: "⭐",
+    symbol: "★",
     title: "Matches the strongest Stockfish move.",
   },
   excellent: {
     id: "excellent",
     text: "Excellent",
-    symbol: "✅",
+    symbol: "!",
     title: "Very close to the engine's best move.",
   },
   great: {
     id: "great",
     text: "Great",
-    symbol: "❗",
+    symbol: "!!",
     title: "A critical move that preserves a strong position.",
   },
   brilliant: {
     id: "brilliant",
     text: "Brilliant",
-    symbol: "💎",
+    symbol: "!!",
     title: "A strong apparent sacrifice that remains objectively sound.",
   },
   good: {
     id: "good",
     text: "Good",
-    symbol: "👍",
+    symbol: "=",
     title: "Keeps the position playable with moderate evaluation loss.",
   },
   inaccuracy: {
     id: "inaccuracy",
     text: "Inaccuracy",
-    symbol: "🤔",
+    symbol: "?!",
     title: "Slightly worsens the position.",
   },
   mistake: {
     id: "mistake",
     text: "Mistake",
-    symbol: "⚠️",
+    symbol: "?",
     title: "Clearly worsens the position.",
   },
   miss: {
     id: "miss",
     text: "Miss",
-    symbol: "👀",
+    symbol: "!?",
     title: "Missed a much stronger continuation.",
   },
   blunder: {
     id: "blunder",
     text: "Blunder",
-    symbol: "❌",
+    symbol: "??",
     title: "Loses a large amount of evaluation.",
   },
   forced: {
     id: "forced",
     text: "Forced",
-    symbol: "🔒",
+    symbol: "□",
     title: "Only one legal move was available.",
   },
 };
@@ -1879,22 +1879,22 @@ export default function GamePage() {
 
   return (
     <main
-      className="min-h-svh overflow-x-hidden overflow-y-auto bg-[#f3f4f2] p-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-zinc-900 lg:h-svh lg:overflow-hidden lg:p-2"
+      className="ce-page-shell h-svh overflow-hidden p-0 text-[var(--ce-ink)] lg:p-2"
       onPointerDownCapture={dismissCheckmateOverlay}
     >
-      <div className={"relative min-h-[calc(100svh-0.75rem)] w-full overflow-hidden lg:grid lg:h-full lg:min-h-0 lg:items-stretch lg:gap-2 lg:overflow-visible " + appGridClass}>
+      <div className={"relative h-full min-h-0 w-full overflow-hidden lg:grid lg:items-stretch lg:gap-2 lg:overflow-visible " + appGridClass}>
         <div className="pointer-events-none absolute inset-x-2 top-2 z-40 flex justify-between lg:hidden">
           <button
             type="button"
             onClick={() => setMobilePanel((panel) => (panel === "left" ? null : "left"))}
-            className="pointer-events-auto rounded-md border border-zinc-300 bg-white/95 px-3 py-1.5 text-xs font-bold text-zinc-900 shadow-sm"
+            className="ce-mobile-tab pointer-events-auto px-3 py-1.5 text-xs font-bold"
           >
             Controls
           </button>
           <button
             type="button"
             onClick={() => setMobilePanel((panel) => (panel === "right" ? null : "right"))}
-            className="pointer-events-auto rounded-md border border-zinc-300 bg-white/95 px-3 py-1.5 text-xs font-bold text-zinc-900 shadow-sm"
+            className="ce-mobile-tab pointer-events-auto px-3 py-1.5 text-xs font-bold"
           >
             Moves
           </button>
@@ -1906,7 +1906,7 @@ export default function GamePage() {
           }`}
         >
           <GameSidebar
-            className="h-full min-h-0 overflow-y-auto overscroll-contain rounded-none lg:rounded-lg"
+            className="h-full min-h-0 overflow-y-auto overscroll-contain"
             scenarioTitle={activeScenario?.title ?? "Sandbox"}
             status={status}
             error={error}
@@ -1950,14 +1950,14 @@ export default function GamePage() {
 
         <div className={`absolute inset-0 z-10 min-h-0 transition-transform duration-300 ease-out lg:static lg:z-auto lg:h-full lg:translate-x-0 ${mobileBoardShift}`}>
           <div
-            className={`absolute left-2 right-2 top-12 z-30 h-2 overflow-hidden rounded-full shadow-sm lg:hidden ${
-              evalBarActive ? "bg-zinc-950" : "bg-zinc-300"
+            className={`absolute left-2 right-2 top-12 z-30 h-2 overflow-hidden shadow-sm lg:hidden ${
+              evalBarActive ? "bg-[var(--ce-ink)]" : "bg-[var(--ce-line)]"
             }`}
             aria-label={showEvalBar ? `Stockfish evaluation ${evalLabel}` : "Evaluation bar hidden"}
           >
             {evalBarActive ? (
               <div
-                className="h-full bg-zinc-50 transition-[width] duration-1000 ease-out"
+                className="h-full bg-[var(--ce-cream)] transition-[width] duration-1000 ease-out"
                 style={{ width: `${evalBarWhite}%` }}
                 aria-hidden="true"
               />
@@ -2011,7 +2011,7 @@ export default function GamePage() {
           }`}
         >
           <MovePanel
-            className="h-full min-h-0 overflow-y-auto overscroll-contain rounded-none lg:rounded-lg"
+            className="h-full min-h-0 overflow-y-auto overscroll-contain"
             positionEditor={positionEditor}
             activeMode={activeMode}
             activeState={activeState}

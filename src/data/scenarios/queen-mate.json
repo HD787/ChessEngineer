@@ -2,38 +2,59 @@
   "id": "queen-mate",
   "title": "Mate with a Queen",
   "description": "Use knight opposition with the queen to shrink the king’s box, force the lone king into a two-square corner shuffle, then bring your king up and finish the mate.",
-  "category": "Endgame",
+  "category": "Endgames",
   "variants": [
     {
       "id": "corner-queen-vs-central-king",
       "label": "Queen and king from the corner",
       "detail": "White: king and queen vs king",
       "playerSide": "w",
-      "setup": { "fen": "8/8/8/4k3/8/8/8/K6Q w - - 0 1" },
-      "temperature": { "mode": "argmax" },
+      "setup": {
+        "fen": "8/8/8/4k3/8/8/8/K6Q w - - 0 1"
+      },
+      "temperature": {
+        "mode": "argmax"
+      },
       "solution": {
         "pgn": "[SetUp \"1\"]\n[FEN \"8/8/8/4k3/8/8/8/K6Q w - - 0 1\"]\n[Result \"*\"]\n\n1. Qc6 Kd4 2. Qb5 Ke4 3. Qc5 Kf4 4. Qd5 Kg4 5. Qe5 Kh4 6. Qf5 Kg3 7. Qe4 Kh3 8. Qf4 Kg2 9. Qe3 Kh2 10. Qf3 Kg1 11. Qe2 Kh1 12. Kb2 Kg1 13. Kc3 Kh1 14. Kd3 Kg1 15. Ke3 Kh1 16. Kf3 Kg1 17. Qg2# *",
         "moves": [
-          "1.Qc6", "Kd4",
-          "2.Qb5", "Ke4",
-          "3.Qc5", "Kf4",
-          "4.Qd5", "Kg4",
-          "5.Qe5", "Kh4",
-          "6.Qf5", "Kg3",
-          "7.Qe4", "Kh3",
-          "8.Qf4", "Kg2",
-          "9.Qe3", "Kh2",
-          "10.Qf3", "Kg1",
-          "11.Qe2", "Kh1",
-          "12.Kb2", "Kg1",
-          "13.Kc3", "Kh1",
-          "14.Kd3", "Kg1",
-          "15.Ke3", "Kh1",
-          "16.Kf3", "Kg1",
+          "1.Qc6",
+          "Kd4",
+          "2.Qb5",
+          "Ke4",
+          "3.Qc5",
+          "Kf4",
+          "4.Qd5",
+          "Kg4",
+          "5.Qe5",
+          "Kh4",
+          "6.Qf5",
+          "Kg3",
+          "7.Qe4",
+          "Kh3",
+          "8.Qf4",
+          "Kg2",
+          "9.Qe3",
+          "Kh2",
+          "10.Qf3",
+          "Kg1",
+          "11.Qe2",
+          "Kh1",
+          "12.Kb2",
+          "Kg1",
+          "13.Kc3",
+          "Kh1",
+          "14.Kd3",
+          "Kg1",
+          "15.Ke3",
+          "Kh1",
+          "16.Kf3",
+          "Kg1",
           "17.Qg2#"
         ],
         "explanation": "White first uses repeated queen moves from knight-distance positions to shrink the black king’s box without stalemating. Once the king is trapped shuffling between h1 and g1, White leaves the queen in place, walks the king up to opposition, and only then delivers Qg2#."
       }
     }
-  ]
+  ],
+  "shortDescription": "Endgame"
 }

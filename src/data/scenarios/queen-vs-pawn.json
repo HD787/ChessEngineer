@@ -2,20 +2,38 @@
   "id": "queen-vs-pawn",
   "title": "Queen vs Pawn",
   "description": "Stop an advanced pawn with checks, force the king in front of it, and approach with your king.",
-  "category": "Queen endgame",
+  "category": "Endgames",
   "variants": [
     {
       "id": "central-pawn-seventh",
       "label": "Central pawn on the seventh",
       "detail": "White to move: stop e1=Q",
       "playerSide": "w",
-      "setup": { "fen": "8/8/K7/8/8/1Q6/4p3/4k3 w - - 0 1" },
-      "temperature": { "mode": "argmax" },
+      "setup": {
+        "fen": "8/8/K7/8/8/1Q6/4p3/4k3 w - - 0 1"
+      },
+      "temperature": {
+        "mode": "argmax"
+      },
       "solution": {
         "pgn": "[SetUp \"1\"]\n[FEN \"8/8/K7/8/8/1Q6/4p3/4k3 w - - 0 1\"]\n[Result \"*\"]\n\n1. Qe3 Kf1 2. Qf3+ Ke1 3. Kb5 Kd2 4. Qg2 Ke3 5. Qg5+ Kf2 6. Qf4+ Kg2 *",
-        "moves": ["1.Qe3", "Kf1", "2.Qf3+", "Ke1", "3.Kb5", "Kd2", "4.Qg2", "Ke3", "5.Qg5+", "Kf2", "6.Qf4+", "Kg2"],
+        "moves": [
+          "1.Qe3",
+          "Kf1",
+          "2.Qf3+",
+          "Ke1",
+          "3.Kb5",
+          "Kd2",
+          "4.Qg2",
+          "Ke3",
+          "5.Qg5+",
+          "Kf2",
+          "6.Qf4+",
+          "Kg2"
+        ],
         "explanation": "Alternate checks and control of the promotion square, using each forced king move to bring your own king closer."
       }
     }
-  ]
+  ],
+  "shortDescription": "Queen endgame"
 }

@@ -2,18 +2,28 @@
   "id": "greek-gift",
   "title": "Find the Greek Gift",
   "description": "Take White and break open the castled king with the classical bishop sacrifice.",
-  "category": "Tactical pattern",
+  "category": "Openings",
   "variants": [
     {
       "id": "french-structure",
       "label": "Attack as White",
       "detail": "White to move: find Bxh7+",
       "playerSide": "w",
-      "setup": { "pgn": "[Event \"Greek Gift Sacrifice\"]\n[Result \"*\"]\n\n1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. Nf3 Bb4 6. Bd3 O-O *" },
-      "temperature": { "mode": "argmax" },
+      "setup": {
+        "pgn": "[Event \"Greek Gift Sacrifice\"]\n[Result \"*\"]\n\n1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. Nf3 Bb4 6. Bd3 O-O *"
+      },
+      "temperature": {
+        "mode": "argmax"
+      },
       "solution": {
         "pgn": "[Event \"Greek Gift Solution\"]\n[Result \"*\"]\n\n1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. Nf3 Bb4 6. Bd3 O-O 7. Bxh7+ Kxh7 8. Ng5+ Kg8 9. Qh5 *",
-        "moves": ["7.Bxh7+!", "Kxh7", "8.Ng5+", "Kg8", "9.Qh5"],
+        "moves": [
+          "7.Bxh7+!",
+          "Kxh7",
+          "8.Ng5+",
+          "Kg8",
+          "9.Qh5"
+        ],
         "explanation": "The bishop removes the h7 shelter, the knight arrives with check, and the queen joins on the h-file."
       }
     },
@@ -22,13 +32,24 @@
       "label": "Defend as Black",
       "detail": "Black to move: respond to Bxh7+",
       "playerSide": "b",
-      "setup": { "pgn": "[Event \"Greek Gift Defense\"]\n[Result \"*\"]\n\n1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. Nf3 Bb4 6. Bd3 O-O 7. Bxh7+ *" },
-      "temperature": { "mode": "argmax" },
+      "setup": {
+        "pgn": "[Event \"Greek Gift Defense\"]\n[Result \"*\"]\n\n1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. Nf3 Bb4 6. Bd3 O-O 7. Bxh7+ *"
+      },
+      "temperature": {
+        "mode": "argmax"
+      },
       "solution": {
         "pgn": "[Event \"Greek Gift Defense Solution\"]\n[Result \"*\"]\n\n1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. Nf3 Bb4 6. Bd3 O-O 7. Bxh7+ Kxh7 8. Ng5+ Kg8 9. Qh5 Re8 *",
-        "moves": ["7...Kxh7", "8.Ng5+", "Kg8", "9.Qh5", "Re8"],
+        "moves": [
+          "7...Kxh7",
+          "8.Ng5+",
+          "Kg8",
+          "9.Qh5",
+          "Re8"
+        ],
         "explanation": "Accept the bishop, retreat toward g8, and create an escape or defensive resource on the back rank. This position remains extremely dangerous."
       }
     }
-  ]
+  ],
+  "shortDescription": "Tactical pattern"
 }

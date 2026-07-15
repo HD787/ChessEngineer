@@ -8,7 +8,8 @@ shown in that card's dropdown.
   "id": "greek-gift",
   "title": "Find the Greek Gift",
   "description": "Practice the classical bishop sacrifice.",
-  "category": "Tactical pattern",
+  "category": "Openings",
+  "shortDescription": "Tactical pattern",
   "variants": [
     {
       "id": "french-structure",
@@ -33,6 +34,10 @@ shown in that card's dropdown.
 
 Use `setup.pgn` for move playback or `setup.fen` for a synthetic position.
 FEN takes precedence if both are present.
+
+`category` is the broad home-screen tab bucket, such as `Openings`,
+`Endgames`, or `Sandbox`. `shortDescription` is the compact card label shown
+above the title, such as `Tactical pattern`, `Rook endgame`, or `Pawn endgame`.
 
 `solution` is optional. Its `pgn` drives the walkable solution timeline, while
 `moves` is the concise line displayed above the explanation. For a FEN setup,

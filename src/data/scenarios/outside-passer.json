@@ -2,20 +2,29 @@
   "id": "outside-passer",
   "title": "Outside Passed Pawn",
   "description": "Use the distant passed pawn to pull the enemy king away before winning on the other wing.",
-  "category": "Pawn endgame",
+  "category": "Endgames",
   "variants": [
     {
       "id": "a-pawn-decoy",
       "label": "A-pawn decoy",
       "detail": "White to move: distract the king",
       "playerSide": "w",
-      "setup": { "fen": "8/8/4kppp/P7/4KPPP/8/8/8 w - - 0 1" },
-      "temperature": { "mode": "argmax" },
+      "setup": {
+        "fen": "8/8/4kppp/P7/4KPPP/8/8/8 w - - 0 1"
+      },
+      "temperature": {
+        "mode": "argmax"
+      },
       "solution": {
         "pgn": "[SetUp \"1\"]\n[FEN \"8/8/4kppp/P7/4KPPP/8/8/8 w - - 0 1\"]\n[Result \"*\"]\n\n1. a6 Kd6 2. f5 *",
-        "moves": ["1.a6", "Kd6", "2.f5"],
+        "moves": [
+          "1.a6",
+          "Kd6",
+          "2.f5"
+        ],
         "explanation": "Push the distant a-pawn to pull the king away, then create entry points against the kingside pawns."
       }
     }
-  ]
+  ],
+  "shortDescription": "Pawn endgame"
 }

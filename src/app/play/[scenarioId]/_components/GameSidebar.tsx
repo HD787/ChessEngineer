@@ -95,56 +95,56 @@ export function GameSidebar({
   onOverlaySideChange,
 }: Props) {
   return (
-    <aside className={`${className} min-h-0 rounded-lg border border-zinc-200 bg-white p-3 shadow-sm lg:overflow-y-auto`}>
-      <div className="flex min-w-0 items-center gap-2.5 border-b border-zinc-200 pb-3">
-        <div className="grid h-8 w-8 place-items-center rounded-md bg-emerald-700 text-base font-bold text-white">
-          H
+    <aside className={`${className} ce-panel min-h-0 p-3 lg:overflow-y-auto`}>
+      <div className="ce-rule flex min-w-0 items-center gap-2.5 border-b pb-3">
+        <div className="ce-brand-mark h-8 w-8 text-[13px] font-bold">
+          CE
         </div>
         <div className="min-w-0">
-          <h1 className="text-base font-bold text-zinc-950">Chess Engineer</h1>
-          <p className="truncate text-xs text-zinc-500" title={scenarioTitle}>
+          <h1 className="ce-title text-base">Chess Engineer</h1>
+          <p className="ce-muted truncate text-xs font-medium" title={scenarioTitle}>
             {scenarioTitle}
           </p>
         </div>
       </div>
       <div className="mt-3 space-y-3">
-        <p className="rounded-md border-l-4 border-emerald-600 bg-emerald-50 px-2.5 py-2 text-xs font-medium text-emerald-950">
+        <p className="ce-accent-panel px-2.5 py-2 text-xs font-bold">
           {status}
         </p>
         <div className="grid grid-cols-3 gap-1.5">
           <button
             type="button"
             onClick={onRestart}
-            className="rounded-md bg-zinc-900 px-2 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-zinc-700"
+            className="ce-button-primary px-2 py-1.5 text-xs font-bold transition-colors"
           >
             Restart
           </button>
           <button
             type="button"
             onClick={onFlip}
-            className="rounded-md border border-zinc-300 px-2 py-1.5 text-xs font-medium transition-colors hover:bg-zinc-100"
+            className="ce-button-secondary px-2 py-1.5 text-xs font-bold transition-colors"
           >
             Flip
           </button>
           <button
             type="button"
             onClick={onHome}
-            className="rounded-md border border-zinc-300 px-2 py-1.5 text-xs font-medium transition-colors hover:bg-zinc-100"
+            className="ce-button-secondary px-2 py-1.5 text-xs font-bold transition-colors"
           >
             Home
           </button>
         </div>
 
         <div>
-          <p className="mb-2 text-[11px] font-bold uppercase text-zinc-400">Players</p>
+          <p className="ce-section-title mb-2">Players</p>
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-zinc-600">
+            <label className="ce-label block">
               White
               <select
                 value={whiteController}
                 onChange={(event) => onWhiteControllerChange(event.target.value)}
                 disabled={controlsDisabled}
-                className="mt-1 w-full rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1.5 text-xs font-medium text-zinc-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                className="ce-select mt-1 w-full px-2 py-1.5 text-xs font-semibold outline-none"
               >
                 <option value="human">Human</option>
                 {availableModels.map((model) => (
@@ -154,13 +154,13 @@ export function GameSidebar({
                 ))}
               </select>
             </label>
-            <label className="block text-xs font-semibold text-zinc-600">
+            <label className="ce-label block">
               Black
               <select
                 value={blackController}
                 onChange={(event) => onBlackControllerChange(event.target.value)}
                 disabled={controlsDisabled}
-                className="mt-1 w-full rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1.5 text-xs font-medium text-zinc-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                className="ce-select mt-1 w-full px-2 py-1.5 text-xs font-semibold outline-none"
               >
                 <option value="human">Human</option>
                 {availableModels.map((model) => (
@@ -174,21 +174,21 @@ export function GameSidebar({
               type="button"
               onClick={onSwapPlayerColors}
               disabled={controlsDisabled || engineThinking}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-xs font-semibold transition-colors hover:bg-zinc-100 disabled:opacity-50"
+              className="ce-button-secondary w-full px-2 py-1.5 text-xs font-bold transition-colors disabled:opacity-50"
             >
               Swap Colors
             </button>
           </div>
         </div>
 
-        <div className="border-t border-zinc-200 pt-3">
-          <p className="mb-2 text-[11px] font-bold uppercase text-zinc-400">Model Play</p>
-          <label className="mb-2 block text-xs font-semibold text-zinc-600">
+        <div className="ce-rule border-t pt-3">
+          <p className="ce-section-title mb-2">Model Play</p>
+          <label className="ce-label mb-2 block">
             Move selection
             <select
               value={temperatureMode}
               onChange={(event) => onTemperatureModeChange(event.target.value as TemperatureMode)}
-              className="mt-1 w-full rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1.5 text-xs font-medium text-zinc-900 outline-none focus:border-emerald-600"
+              className="ce-select mt-1 w-full px-2 py-1.5 text-xs font-semibold outline-none"
             >
               {temperatureOptions.map((option) => (
                 <option key={option.id} value={option.id}>
@@ -197,28 +197,28 @@ export function GameSidebar({
               ))}
             </select>
           </label>
-          <label className="flex items-center justify-between gap-2 py-0.5 text-xs font-medium">
+          <label className="flex items-center justify-between gap-2 py-0.5 text-xs font-bold text-[var(--ce-ink)]">
             Auto-play turns
             <input
               type="checkbox"
               checked={autoPlayModels}
               onChange={(event) => onAutoPlayModelsChange(event.target.checked)}
               disabled={controlsDisabled}
-              className="h-4 w-4 accent-emerald-700"
+              className="ce-checkbox"
             />
           </label>
           <button
             type="button"
             onClick={onRequestModelMove}
             disabled={!canRequestModelMove}
-            className="mt-1.5 w-full rounded-md bg-emerald-700 px-2 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 disabled:bg-zinc-200 disabled:text-zinc-500"
+            className="ce-button-primary mt-1.5 w-full px-2 py-1.5 text-xs font-bold transition-colors disabled:border-[var(--ce-line)] disabled:bg-[var(--ce-line-soft)] disabled:text-[var(--ce-heading-muted)]"
           >
             Step Model Move
           </button>
-          <p className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
+          <p className="ce-muted mt-2 flex items-center gap-2 text-xs font-medium">
             <span
-              className={`h-2 w-2 rounded-full ${
-                engineStatus === "connected" ? "bg-emerald-500" : "bg-zinc-300"
+              className={`h-2 w-2 ${
+                engineStatus === "connected" ? "bg-[var(--ce-green)]" : "bg-[var(--ce-line)]"
               }`}
             />
             Runner {engineStatus} · {availableModels.length} option
@@ -227,76 +227,76 @@ export function GameSidebar({
           </p>
         </div>
 
-        <div className="border-t border-zinc-200 pt-3">
-          <p className="mb-2 text-[11px] font-bold uppercase text-zinc-400">Analysis</p>
-          <label className="flex items-center justify-between gap-2 py-0.5 text-xs font-medium">
+        <div className="ce-rule border-t pt-3">
+          <p className="ce-section-title mb-2">Analysis</p>
+          <label className="flex items-center justify-between gap-2 py-0.5 text-xs font-bold text-[var(--ce-ink)]">
             Eval bar
             <input
               type="checkbox"
               checked={showEvalBar}
               onChange={(event) => onShowEvalBarChange(event.target.checked)}
-              className="h-4 w-4 accent-emerald-700"
+              className="ce-checkbox"
             />
           </label>
-          <p className="mt-1 text-xs text-zinc-500">Browser Stockfish · {evalText}</p>
+          <p className="ce-muted mt-1 text-xs font-medium">Browser Stockfish · {evalText}</p>
         </div>
 
-        <div className="border-t border-zinc-200 pt-3">
-          <p className="mb-2 text-[11px] font-bold uppercase text-zinc-400">Board Overlay</p>
-          <label className="flex items-center justify-between gap-2 py-0.5 text-xs font-medium">
+        <div className="ce-rule border-t pt-3">
+          <p className="ce-section-title mb-2">Board Overlay</p>
+          <label className="flex items-center justify-between gap-2 py-0.5 text-xs font-bold text-[var(--ce-ink)]">
             Move labels
             <input
               type="checkbox"
               checked={showMoveQualityLabels}
               onChange={(event) => onShowMoveQualityLabelsChange(event.target.checked)}
-              className="h-4 w-4 accent-emerald-700"
+              className="ce-checkbox"
             />
           </label>
-          <label className="flex items-center justify-between gap-2 py-0.5 text-xs font-medium">
+          <label className="flex items-center justify-between gap-2 py-0.5 text-xs font-bold text-[var(--ce-ink)]">
             Move safety hints
             <input
               type="checkbox"
               checked={showMoveSafetyHints}
               onChange={(event) => onShowMoveSafetyHintsChange(event.target.checked)}
-              className="h-4 w-4 accent-emerald-700"
+              className="ce-checkbox"
             />
           </label>
-          <label className="flex items-center justify-between gap-2 py-0.5 text-xs">
+          <label className="flex items-center justify-between gap-2 py-0.5 text-xs font-medium text-[var(--ce-ink)]">
             Show control
             <input
               type="checkbox"
               checked={showControlOverlay}
               onChange={(event) => onShowControlOverlayChange(event.target.checked)}
-              className="h-4 w-4 accent-emerald-700"
+              className="ce-checkbox"
             />
           </label>
-          <label className="flex items-center justify-between gap-2 py-0.5 text-xs">
+          <label className="flex items-center justify-between gap-2 py-0.5 text-xs font-medium text-[var(--ce-ink)]">
             Occupied only
             <input
               type="checkbox"
               checked={showOccupiedOnly}
               onChange={(event) => onShowOccupiedOnlyChange(event.target.checked)}
               disabled={!showControlOverlay}
-              className="h-4 w-4 accent-emerald-700"
+              className="ce-checkbox"
             />
           </label>
-          <label className="flex items-center justify-between gap-2 py-0.5 text-xs">
+          <label className="flex items-center justify-between gap-2 py-0.5 text-xs font-medium text-[var(--ce-ink)]">
             Own pieces only
             <input
               type="checkbox"
               checked={showOwnOccupiedOnly}
               onChange={(event) => onShowOwnOccupiedOnlyChange(event.target.checked)}
               disabled={overlayOwnPiecesDisabled}
-              className="h-4 w-4 accent-emerald-700"
+              className="ce-checkbox"
             />
           </label>
-          <label className="mt-2 block text-xs font-semibold text-zinc-600">
+          <label className="ce-label mt-2 block">
             Side
             <select
               value={overlaySide}
               onChange={(event) => onOverlaySideChange(event.target.value as "both" | "w" | "b")}
               disabled={!showControlOverlay}
-              className="mt-1 w-full rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1.5 text-xs outline-none focus:border-emerald-600"
+              className="ce-select mt-1 w-full px-2 py-1.5 text-xs outline-none"
             >
               <option value="both">Both</option>
               <option value="w">White</option>

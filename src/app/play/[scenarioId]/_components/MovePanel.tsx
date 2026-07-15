@@ -95,12 +95,12 @@ export function MovePanel({
   renderHistoryMoveLabel,
 }: Props) {
   return (
-    <section className={`${className} flex min-h-0 flex-col rounded-lg border border-zinc-200 bg-white p-4 shadow-sm`}>
+    <section className={`${className} ce-panel flex min-h-0 flex-col p-4`}>
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">{positionEditor ? "Position Editor" : "Moves"}</h2>
+          <h2 className="ce-title text-lg">{positionEditor ? "Position Editor" : "Moves"}</h2>
           {!positionEditor ? (
-            <span className="text-xs text-zinc-500">
+            <span className="ce-muted text-xs font-medium">
               {lastPly === 0 ? "New game" : `${Math.ceil(lastPly / 2)} move${lastPly > 2 ? "s" : ""}`}
             </span>
           ) : null}
@@ -111,7 +111,7 @@ export function MovePanel({
               type="button"
               onClick={onShowBestMoves}
               disabled={!canShowBestMoves || bestMovesThinking}
-              className="rounded-md border border-emerald-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:border-zinc-200 disabled:text-zinc-300 disabled:hover:bg-white"
+              className="ce-button-secondary px-2.5 py-1.5 text-xs font-bold ce-positive disabled:border-[var(--ce-line)] disabled:text-[var(--ce-heading-muted)] disabled:hover:bg-transparent"
             >
               {bestMovesThinking ? "Finding..." : "Best moves"}
             </button>
@@ -121,10 +121,10 @@ export function MovePanel({
               type="button"
               onClick={() => onTogglePositionEditor(!positionEditor)}
               disabled={!positionEditor && isReviewing}
-              className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
+              className={`px-3 py-1.5 text-xs font-bold ${
                 positionEditor
-                  ? "bg-zinc-900 text-white hover:bg-zinc-700"
-                  : "border border-zinc-300 hover:bg-zinc-100 disabled:border-zinc-200 disabled:text-zinc-300"
+                  ? "ce-button-primary"
+                  : "ce-button-secondary disabled:border-[var(--ce-line)] disabled:text-[var(--ce-heading-muted)]"
               }`}
             >
               {positionEditor ? "Done" : "Edit Position"}
@@ -134,10 +134,10 @@ export function MovePanel({
       </div>
       {positionEditor ? (
         <div className="mt-4 flex min-h-0 flex-1 flex-col">
-          <p className="text-sm text-zinc-600">Drag pieces onto the board or move existing pieces freely.</p>
+          <p className="ce-text text-sm font-medium">Drag pieces onto the board or move existing pieces freely.</p>
           {(["w", "b"] as Side[]).map((color) => (
             <div key={color} className="mt-5">
-              <p className="mb-2 text-[11px] font-bold uppercase text-zinc-400">
+              <p className="ce-section-title mb-2">
                 {color === "w" ? "White" : "Black"} pieces
               </p>
               <div className="grid grid-cols-6 gap-2">
@@ -154,7 +154,7 @@ export function MovePanel({
                       onTouchStart={(event) => {
                         onStartEditorPieceDrag(piece.code, event.nativeEvent);
                       }}
-                      className="grid aspect-square place-items-center rounded-md border border-zinc-300 bg-zinc-50 text-3xl text-zinc-900 hover:border-emerald-600 hover:bg-emerald-50"
+                      className="ce-subpanel grid aspect-square place-items-center text-3xl text-[var(--ce-ink)] shadow-sm hover:border-[var(--ce-green)] hover:bg-[var(--ce-green-soft)]"
                       title={`Drag ${piece.name} onto board`}
                       aria-label={`Drag ${piece.name} onto board`}
                     >
@@ -164,13 +164,13 @@ export function MovePanel({
               </div>
             </div>
           ))}
-          <div className="mt-6 grid grid-cols-[1fr_auto] gap-2 border-t border-zinc-200 pt-4">
-            <label className="text-xs font-semibold text-zinc-600">
+          <div className="ce-rule mt-6 grid grid-cols-[1fr_auto] gap-2 border-t pt-4">
+            <label className="ce-label">
               Side to move
               <select
                 value={activeState?.turn ?? "w"}
                 onChange={(event) => onChangeEditorTurn(event.target.value as Side)}
-                className="mt-1 w-full rounded-md border border-zinc-300 bg-zinc-50 px-2 py-2 text-sm outline-none focus:border-emerald-600"
+                className="ce-select mt-1 w-full px-2 py-2 text-sm outline-none"
               >
                 <option value="w">White</option>
                 <option value="b">Black</option>
@@ -180,29 +180,29 @@ export function MovePanel({
               type="button"
               onClick={onDeleteSelectedPiece}
               disabled={!selected}
-              className="self-end rounded-md border border-rose-300 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:border-zinc-200 disabled:text-zinc-300"
+              className="ce-button-danger self-end px-3 py-2 text-sm font-bold disabled:border-[var(--ce-line)] disabled:text-[var(--ce-heading-muted)]"
             >
               Delete selected
             </button>
           </div>
-          <p className="mt-auto border-l-2 border-zinc-300 pl-3 text-xs leading-5 text-zinc-500">
+          <p className="ce-muted mt-auto border-l-2 border-[#b7a88f] pl-3 text-xs font-medium leading-5">
             A playable position requires one king of each color.
           </p>
         </div>
       ) : (
         <>
-          <div className="mt-2 border-l-2 border-emerald-600 bg-emerald-50 px-3 py-2">
+          <div className="ce-accent-panel mt-2 px-3 py-2">
             <div className="flex min-h-8 items-center justify-between gap-3">
               <div className="min-w-0">
                 {currentOpening ? (
                   <>
-                    <p className="text-[10px] font-bold uppercase text-emerald-700">{currentOpening.eco}</p>
-                    <p className="truncate text-sm font-semibold text-emerald-950" title={currentOpening.name}>
+                    <p className="text-[10px] font-black uppercase ce-positive">{currentOpening.eco}</p>
+                    <p className="truncate text-sm font-bold text-[var(--ce-green-dark)]" title={currentOpening.name}>
                       {currentOpening.name}
                     </p>
                   </>
                 ) : (
-                  <p className="text-sm text-zinc-500">Starting position</p>
+                  <p className="ce-muted text-sm font-medium">Starting position</p>
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -210,7 +210,7 @@ export function MovePanel({
                   <button
                     type="button"
                     onClick={isSolutionMode ? onReturnFromSolution : onShowSolutionTimeline}
-                    className="rounded-md border border-emerald-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+                    className="ce-button-secondary px-2.5 py-1.5 text-xs font-bold ce-positive"
                   >
                     {isSolutionMode ? "Back to game" : "Reveal solution"}
                   </button>
@@ -218,11 +218,11 @@ export function MovePanel({
               </div>
             </div>
             {isSolutionMode && activeVariant?.solution ? (
-              <div className="mt-2 border-t border-emerald-200 pt-2">
-                <p className="font-mono text-sm font-semibold text-emerald-950">
+              <div className="mt-2 border-t border-[#c7dbc8] pt-2">
+                <p className="font-mono text-sm font-bold text-[var(--ce-green-dark)]">
                   {activeVariant.solution.moves.join(" ")}
                 </p>
-                <p className="mt-1 text-xs leading-5 text-emerald-900">
+                <p className="mt-1 text-xs font-medium leading-5 ce-positive">
                   {activeVariant.solution.explanation}
                 </p>
               </div>
@@ -231,27 +231,27 @@ export function MovePanel({
 
           <div
             ref={moveHistoryRef}
-            className="mt-3 min-h-0 flex-1 basis-0 overflow-y-auto overflow-x-hidden rounded-md border border-zinc-300 [scrollbar-gutter:stable]"
+            className="ce-subpanel mt-3 min-h-0 flex-1 basis-0 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
           >
-            <div className="sticky top-0 grid grid-cols-[44px_1fr_1fr] border-b border-zinc-300 bg-zinc-100 px-2 py-2 text-xs font-semibold uppercase text-zinc-500">
+            <div className="ce-table-head sticky top-0 grid grid-cols-[44px_1fr_1fr] border-b px-2 py-2">
               <span>#</span>
               <span>White</span>
               <span>Black</span>
             </div>
             {moveRows.length === 0 ? (
-              <p className="px-3 py-5 text-sm text-zinc-500">Moves will appear here as the game is played.</p>
+              <p className="ce-muted px-3 py-5 text-sm font-medium">Moves will appear here as the game is played.</p>
             ) : (
               moveRows.map((row) => (
                 <div
                   key={row.moveNumber}
-                  className="grid grid-cols-[44px_1fr_1fr] items-center border-b border-zinc-200 px-2 py-1 last:border-b-0"
+                  className="ce-table-row grid grid-cols-[44px_1fr_1fr] items-center border-b px-2 py-1 last:border-b-0"
                 >
-                  <span className="text-xs tabular-nums text-zinc-500">{row.moveNumber}.</span>
+                  <span className="text-xs font-medium tabular-nums text-[var(--ce-heading-muted)]">{row.moveNumber}.</span>
                   <button
                     type="button"
                     onClick={() => onGoToPly(row.whitePly)}
-                    className={`h-12 rounded px-2 py-1 text-left text-sm font-medium hover:bg-zinc-200 ${
-                      currentPly === row.whitePly ? "bg-zinc-900 text-white hover:bg-zinc-800" : ""
+                    className={`h-12 px-2 py-1 text-left text-sm font-bold hover:bg-[var(--background)] ${
+                      currentPly === row.whitePly ? "ce-active-row" : ""
                     }`}
                   >
                     <span className="block truncate">{row.white}</span>
@@ -261,8 +261,8 @@ export function MovePanel({
                     <button
                       type="button"
                       onClick={() => onGoToPly(row.blackPly!)}
-                      className={`h-12 rounded px-2 py-1 text-left text-sm font-medium hover:bg-zinc-200 ${
-                        currentPly === row.blackPly ? "bg-zinc-900 text-white hover:bg-zinc-800" : ""
+                      className={`h-12 px-2 py-1 text-left text-sm font-bold hover:bg-[var(--background)] ${
+                        currentPly === row.blackPly ? "ce-active-row" : ""
                       }`}
                     >
                       <span className="block truncate">{row.black}</span>
@@ -276,13 +276,13 @@ export function MovePanel({
             )}
           </div>
 
-          <div className="mt-3 shrink-0 rounded-md border border-zinc-300 bg-zinc-50 p-3">
+          <div className="ce-subpanel mt-3 shrink-0 bg-[var(--ce-paper-warm)] p-3">
             <div className="flex items-center justify-center gap-2">
               <button
                 type="button"
                 onClick={() => onGoToPly(0)}
                 disabled={!timelineExists || currentPly === 0}
-                className="h-9 w-9 rounded border border-zinc-300 text-sm hover:bg-zinc-200 disabled:opacity-40"
+                className="ce-button-secondary h-9 w-9 text-sm font-bold disabled:opacity-40"
                 aria-label="Jump to beginning"
                 title="Jump to beginning"
               >
@@ -292,7 +292,7 @@ export function MovePanel({
                 type="button"
                 onClick={() => onGoToPly(currentPly - 1)}
                 disabled={!timelineExists || currentPly === 0}
-                className="h-9 w-9 rounded border border-zinc-300 text-sm hover:bg-zinc-200 disabled:opacity-40"
+                className="ce-button-secondary h-9 w-9 text-sm font-bold disabled:opacity-40"
                 aria-label="Previous move"
                 title="Previous move"
               >
@@ -302,7 +302,7 @@ export function MovePanel({
                 type="button"
                 onClick={() => onGoToPly(currentPly + 1)}
                 disabled={!timelineExists || currentPly === lastPly}
-                className="h-9 w-9 rounded border border-zinc-300 text-sm hover:bg-zinc-200 disabled:opacity-40"
+                className="ce-button-secondary h-9 w-9 text-sm font-bold disabled:opacity-40"
                 aria-label="Next move"
                 title="Next move"
               >
@@ -312,7 +312,7 @@ export function MovePanel({
                 type="button"
                 onClick={() => onGoToPly(lastPly)}
                 disabled={!timelineExists || currentPly === lastPly}
-                className="h-9 w-9 rounded border border-zinc-300 text-sm hover:bg-zinc-200 disabled:opacity-40"
+                className="ce-button-secondary h-9 w-9 text-sm font-bold disabled:opacity-40"
                 aria-label="Jump to end"
                 title="Jump to end"
               >
@@ -328,7 +328,7 @@ export function MovePanel({
               className="mt-3 w-full"
               disabled={!timelineExists}
             />
-            <p className="mt-2 text-center text-xs text-zinc-600">{currentMoveText}</p>
+            <p className="ce-text mt-2 text-center text-xs font-bold">{currentMoveText}</p>
           </div>
         </>
       )}

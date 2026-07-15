@@ -2,7 +2,7 @@
   "id": "bishop-knight-mate",
   "title": "Mate with Bishop and Knight",
   "description": "Centralize your pieces, drive the king to the edge, use the knight's W maneuver to force it toward the bishop-colored corner, and complete the mating net.",
-  "category": "Advanced endgame",
+  "category": "Endgames",
   "variants": [
     {
       "id": "light-bishop-w-maneuver",
@@ -87,5 +87,6 @@
         "explanation": "White first centralizes the king and coordinates the bishop and knight to create a wall that drives the black king to the edge. Black heads toward the wrong corner, where a light-squared bishop cannot deliver mate. White then begins the W maneuver: the knight travels through e5, f7, e5, d7, f6, d5 and b4 while the king and bishop continually rebuild the barrier. Once Black is permanently confined near the light-squared a8 corner, White arranges the final net. Bb7+ forces the king to a7, and Nc6# completes the mate."
       }
     }
-  ]
+  ],
+  "shortDescription": "Advanced endgame"
 }

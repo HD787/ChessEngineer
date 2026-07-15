@@ -2,20 +2,29 @@
   "id": "connected-passers",
   "title": "Connected Passed Pawns",
   "description": "Advance the protected pawn first so one pawn promotes if the king captures the other.",
-  "category": "Pawn endgame",
+  "category": "Endgames",
   "variants": [
     {
       "id": "sixth-rank-march",
       "label": "Central pawn pair",
       "detail": "White to move: force one pawn through",
       "playerSide": "w",
-      "setup": { "fen": "8/3k4/2PP4/8/8/8/6K1/8 w - - 0 1" },
-      "temperature": { "mode": "argmax" },
+      "setup": {
+        "fen": "8/3k4/2PP4/8/8/8/6K1/8 w - - 0 1"
+      },
+      "temperature": {
+        "mode": "argmax"
+      },
       "solution": {
         "pgn": "[SetUp \"1\"]\n[FEN \"8/3k4/2PP4/8/8/8/6K1/8 w - - 0 1\"]\n[Result \"*\"]\n\n1. c7 Kxd6 2. c8=Q *",
-        "moves": ["1.c7", "Kxd6", "2.c8=Q"],
+        "moves": [
+          "1.c7",
+          "Kxd6",
+          "2.c8=Q"
+        ],
         "explanation": "Push the pawn that is protected by its neighbor. If the king takes the rear pawn, the advanced pawn queens."
       }
     }
-  ]
+  ],
+  "shortDescription": "Pawn endgame"
 }
