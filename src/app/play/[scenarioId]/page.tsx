@@ -2059,7 +2059,7 @@ export default function GamePage() {
             ) : null}
           </div>
           <BoardArea
-            className="min-h-full [--board-max-size:calc(100svh-196px)] p-2 pt-16 pb-3 lg:h-full lg:min-h-0 lg:[--board-max-size:calc(100svh-118px)] lg:p-0"
+            className="min-h-full [--board-max-size:calc(100svh-210px)] p-2 pt-16 pb-3 lg:h-full lg:min-h-0 lg:[--board-max-size:calc(100svh-118px)] lg:p-0"
             boardRef={boardElRef}
             topPlayer={topPlayer}
             bottomPlayer={bottomPlayer}

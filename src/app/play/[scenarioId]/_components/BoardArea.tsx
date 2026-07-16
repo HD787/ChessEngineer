@@ -227,7 +227,7 @@ export function BoardArea({
   onDismissCheckmate,
 }: Props) {
   return (
-    <section className={`${className} flex min-h-0 flex-col items-stretch justify-start gap-1 lg:min-h-[420px]`}>
+    <section className={`${className} flex min-h-0 flex-col items-stretch justify-between gap-1 lg:min-h-[420px] lg:justify-start`}>
       <div>
         <PlayerCard
           player={topPlayer}
@@ -306,7 +306,7 @@ export function BoardArea({
           ) : null}
         </div>
       </div>
-      <div className="mt-auto">
+      <div className="lg:mt-auto">
         <PlayerCard
           player={bottomPlayer}
           material={material}
