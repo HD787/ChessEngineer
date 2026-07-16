@@ -589,6 +589,7 @@ function classifyMoveLabel({
 }): MoveLabel {
   const uci = after.uci;
   if (!uci) return MOVE_LABELS.good;
+  if (after.state.isCheckmate) return MOVE_LABELS.best;
   if (isOpeningBookMove(after.state.fen, after.ply)) return MOVE_LABELS.book;
   if (legalMoveCount(before.state.fen) <= 1) return MOVE_LABELS.forced;
 
