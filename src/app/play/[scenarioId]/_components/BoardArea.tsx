@@ -5,6 +5,7 @@ const files = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
 type Square = `${(typeof files)[number]}${"8" | "7" | "6" | "5" | "4" | "3" | "2" | "1"}`;
 type Side = "w" | "b";
 type PieceKind = "p" | "n" | "b" | "r" | "q";
+type PromotionPiece = "q" | "r" | "b" | "n";
 type LegalSafety = { attacked: boolean; defended: boolean };
 type MoveSafety = "danger" | "contested" | "safe";
 type PlayerCardInfo = {
@@ -29,6 +30,26 @@ const pieceGlyphs: Record<Side, Record<PieceKind, string>> = {
   b: { p: "♟", n: "♞", b: "♝", r: "♜", q: "♛" },
 };
 
+const pieceRoles: Record<PieceKind, string> = {
+  p: "pawn",
+  n: "knight",
+  b: "bishop",
+  r: "rook",
+  q: "queen",
+};
+
+function BoardPieceIcon({ color, piece }: { color: Side; piece: PieceKind }) {
+  const className = `ce-piece-icon ${pieceRoles[piece]} ${color === "w" ? "white" : "black"}`;
+
+  return (
+    <span
+      className="cg-wrap ce-piece-holder"
+      aria-hidden="true"
+      dangerouslySetInnerHTML={{ __html: `<piece class="${className}"></piece>` }}
+    />
+  );
+}
+
 function squareOverlayPosition(square: Square, isFlipped: boolean) {
   const file = files.indexOf(square[0] as (typeof files)[number]);
   const rank = Number(square[1]);
@@ -37,6 +58,20 @@ function squareOverlayPosition(square: Square, isFlipped: boolean) {
   return {
     left: `${column * 12.5}%`,
     top: `${row * 12.5}%`,
+  };
+}
+
+function promotionMenuPosition(square: Square, color: Side, isFlipped: boolean) {
+  const file = files.indexOf(square[0] as (typeof files)[number]);
+  const rank = Number(square[1]);
+  const column = isFlipped ? 7 - file : file;
+  const row = isFlipped ? rank - 1 : 8 - rank;
+  const opensDown = color === "w" ? !isFlipped : isFlipped;
+  const topRow = opensDown ? row : row - 3;
+
+  return {
+    left: `${column * 12.5}%`,
+    top: `${Math.max(0, Math.min(4, topRow)) * 12.5}%`,
   };
 }
 
@@ -165,6 +200,8 @@ type Props = {
   boardMoveLabel: ReactNode;
   showCheckmateOverlay: boolean;
   activeState: Snapshot | null | undefined;
+  promotionChoice: { color: Side; square: Square } | null;
+  onChoosePromotion: (piece: PromotionPiece) => void;
   onDismissCheckmate: () => void;
 };
 
@@ -185,6 +222,8 @@ export function BoardArea({
   boardMoveLabel,
   showCheckmateOverlay,
   activeState,
+  promotionChoice,
+  onChoosePromotion,
   onDismissCheckmate,
 }: Props) {
   return (
@@ -238,6 +277,32 @@ export function BoardArea({
                 <strong>{activeState.turn === "w" ? "Black" : "White"} wins</strong>
               </div>
             </button>
+          ) : null}
+          {promotionChoice ? (
+            <div
+              className="promotion-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Choose promotion piece"
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <div
+                className="promotion-picker"
+                style={promotionMenuPosition(promotionChoice.square, promotionChoice.color, isFlipped)}
+              >
+                {(["q", "r", "b", "n"] as const).map((piece) => (
+                  <button
+                    key={piece}
+                    type="button"
+                    className="promotion-option"
+                    onClick={() => onChoosePromotion(piece)}
+                    aria-label={`Promote to ${piece === "q" ? "queen" : piece === "r" ? "rook" : piece === "b" ? "bishop" : "knight"}`}
+                  >
+                    <BoardPieceIcon color={promotionChoice.color} piece={piece} />
+                  </button>
+                ))}
+              </div>
+            </div>
           ) : null}
         </div>
       </div>

@@ -35,6 +35,27 @@ type EditorPiece = {
   name: string;
 };
 
+const pieceRoles: Record<PieceCode[1], string> = {
+  p: "pawn",
+  n: "knight",
+  b: "bishop",
+  r: "rook",
+  q: "queen",
+  k: "king",
+};
+
+function BoardPieceIcon({ code }: { code: PieceCode }) {
+  const className = `ce-piece-icon ${pieceRoles[code[1]]} ${code[0] === "w" ? "white" : "black"}`;
+
+  return (
+    <span
+      className="cg-wrap ce-piece-holder"
+      aria-hidden="true"
+      dangerouslySetInnerHTML={{ __html: `<piece class="${className}"></piece>` }}
+    />
+  );
+}
+
 type Props = {
   className?: string;
   positionEditor: boolean;
@@ -158,7 +179,7 @@ export function MovePanel({
                       title={`Drag ${piece.name} onto board`}
                       aria-label={`Drag ${piece.name} onto board`}
                     >
-                      {piece.glyph}
+                      <BoardPieceIcon code={piece.code} />
                     </button>
                   ))}
               </div>

@@ -225,6 +225,41 @@ export default function Home() {
             </article>
           ))}
         </div>
+
+        <footer className="mt-8 border border-[var(--ce-ink)] bg-[var(--ce-paper)] px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="ce-section-title">Source</p>
+              <p className="ce-muted text-xs font-bold">Code and published models</p>
+            </div>
+            <nav className="flex flex-wrap gap-2 text-xs font-black uppercase tracking-[0.08em]">
+              <a
+                href="https://github.com/HD787/ChessEngineer"
+                target="_blank"
+                rel="noreferrer"
+                className="ce-button-secondary px-3 py-1.5"
+              >
+                Web UI
+              </a>
+              <a
+                href="https://github.com/HD787/ChessModelServer"
+                target="_blank"
+                rel="noreferrer"
+                className="ce-button-secondary px-3 py-1.5"
+              >
+                Model runner
+              </a>
+              <a
+                href="https://huggingface.co/hd787"
+                target="_blank"
+                rel="noreferrer"
+                className="ce-button-secondary px-3 py-1.5"
+              >
+                Models
+              </a>
+            </nav>
+          </div>
+        </footer>
       </section>
     </main>
   );

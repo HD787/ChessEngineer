@@ -57,6 +57,7 @@ type ServedModel = {
 type PlayerController = "human" | string;
 type Side = "w" | "b";
 type PieceKind = "p" | "n" | "b" | "r" | "q";
+type PromotionPiece = "q" | "r" | "b" | "n";
 type MaterialSummary = {
   capturedByWhite: PieceKind[];
   capturedByBlack: PieceKind[];
@@ -335,6 +336,8 @@ const MOVE_DEPTH = 6;
 const MOVE_LABEL_DEPTH = 7;
 const BEST_MOVES_DEPTH = 9;
 const BEST_MOVES_COUNT = 3;
+const MODEL_WS_RECONNECT_INITIAL_MS = 500;
+const MODEL_WS_RECONNECT_MAX_MS = 8000;
 const OPENING_BOOK_MAX_PLY = 16;
 const MOVE_LABELS: Record<MoveLabelId, MoveLabel> = {
   book: {
@@ -676,6 +679,11 @@ export default function GamePage() {
   const [bestMovesThinking, setBestMovesThinking] = useState(false);
   const [dismissedCheckmateFen, setDismissedCheckmateFen] = useState<string | null>(null);
   const [mobilePanel, setMobilePanel] = useState<"left" | "right" | null>(null);
+  const [pendingPromotion, setPendingPromotion] = useState<{
+    from: Square;
+    to: Square;
+    color: Side;
+  } | null>(null);
 
   const workerRef = useRef<Worker | null>(null);
   const pendingRef = useRef(new Map<string, (result: WorkerResponse) => void>());
@@ -683,6 +691,8 @@ export default function GamePage() {
   const moveHistoryRef = useRef<HTMLDivElement | null>(null);
   const groundRef = useRef<Api | null>(null);
   const engineWsRef = useRef<WebSocket | null>(null);
+  const engineReconnectTimerRef = useRef<number | null>(null);
+  const engineConnectionGenerationRef = useRef(0);
   const applyingEngineMoveRef = useRef(false);
   const moveInFlightRef = useRef<string | null>(null);
   const activeStateRef = useRef<Snapshot | null>(null);
@@ -691,7 +701,7 @@ export default function GamePage() {
   const activeModeRef = useRef<TrainingMode>("sandbox");
   const activeVariantIdRef = useRef("standard");
   const temperatureModeRef = useRef<TemperatureMode>("optimal");
-  const requestMoveRef = useRef<(from: Square, to: Square) => Promise<boolean>>(
+  const requestMoveRef = useRef<(from: Square, to: Square, promotion?: PromotionPiece) => Promise<boolean>>(
     async () => false,
   );
   const moveHandlerRef = useRef<(orig: Square, dest: Square) => void>(() => {});
@@ -878,6 +888,9 @@ export default function GamePage() {
     }
     const from = bestmove.slice(0, 2) as Square;
     const to = bestmove.slice(2, 4) as Square;
+    const promotion = ["q", "r", "b", "n"].includes(bestmove[4])
+      ? (bestmove[4] as PromotionPiece)
+      : undefined;
     applyingEngineMoveRef.current = true;
     const delayMs = Math.floor(
       ENGINE_DELAY_MIN_MS + Math.random() * (ENGINE_DELAY_MAX_MS - ENGINE_DELAY_MIN_MS + 1),
@@ -899,7 +912,7 @@ export default function GamePage() {
       }
       pendingEngineRequestRef.current = null;
       setEngineThinking(false);
-      void requestMoveRef.current(from, to).finally(() => {
+      void requestMoveRef.current(from, to, promotion).finally(() => {
         applyingEngineMoveRef.current = false;
       });
     }, delayMs);
@@ -1002,76 +1015,135 @@ export default function GamePage() {
   }
 
   useEffect(() => {
-    const ws = new WebSocket(modelWebsocketUrl());
-    engineWsRef.current = ws;
+    let disposed = false;
+    let reconnectAttempt = 0;
 
-    ws.onopen = () => {
-      setEngineStatus("connected");
-    };
-
-    ws.onclose = () => {
-      setEngineStatus("disconnected");
-      setEngineThinking(false);
-      if (engineWsRef.current === ws) {
-        engineWsRef.current = null;
+    const clearReconnectTimer = () => {
+      if (engineReconnectTimerRef.current !== null) {
+        window.clearTimeout(engineReconnectTimerRef.current);
+        engineReconnectTimerRef.current = null;
       }
     };
 
-    ws.onerror = () => {
-      setEngineStatus("disconnected");
-      setEngineThinking(false);
+    const scheduleReconnect = () => {
+      if (disposed || engineReconnectTimerRef.current !== null) return;
+      const delay = Math.min(
+        MODEL_WS_RECONNECT_MAX_MS,
+        MODEL_WS_RECONNECT_INITIAL_MS * 2 ** reconnectAttempt,
+      );
+      reconnectAttempt += 1;
+      setEngineStatus("connecting");
+      engineReconnectTimerRef.current = window.setTimeout(() => {
+        engineReconnectTimerRef.current = null;
+        connect();
+      }, delay);
     };
 
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data) as EngineWsMessage;
-        if (msg.type === "ready" || msg.type === "models") {
-          const servedModels = Array.isArray(msg.models) ? msg.models : [];
-          setModels(servedModels);
-          const activeScenario = trainingModes.find((mode) => mode.id === activeModeRef.current);
-          const activeVariant = activeScenario?.variants.find(
-            (variant) => variant.id === activeVariantIdRef.current,
-          );
-          const fallback = preferredScenarioModelId(
-            [browserStockfishModel, ...servedModels],
-            activeVariant?.opponentModelId,
-          );
-          const useFallback = (value: PlayerController) =>
-            (value === "human" || isBrowserStockfish(value)) && fallback ? fallback : value;
-          if (activeModeRef.current === "sandbox") {
-            setBlackController(useFallback);
-          } else {
-            const playerSide = activeVariant?.playerSide;
-            if (playerSide === "w") {
-              setWhiteController("human");
-              setBlackController(useFallback);
-            } else {
-              setWhiteController(useFallback);
-              setBlackController("human");
-            }
-          }
-          return;
+    const handleModelList = (servedModels: ServedModel[]) => {
+      setModels(servedModels);
+      const activeScenario = trainingModes.find((mode) => mode.id === activeModeRef.current);
+      const activeVariant = activeScenario?.variants.find(
+        (variant) => variant.id === activeVariantIdRef.current,
+      );
+      const fallback = preferredScenarioModelId(
+        [browserStockfishModel, ...servedModels],
+        activeVariant?.opponentModelId,
+      );
+      const useFallback = (value: PlayerController) =>
+        (value === "human" || isBrowserStockfish(value)) && fallback ? fallback : value;
+      if (activeModeRef.current === "sandbox") {
+        setBlackController(useFallback);
+      } else {
+        const playerSide = activeVariant?.playerSide;
+        if (playerSide === "w") {
+          setWhiteController("human");
+          setBlackController(useFallback);
+        } else {
+          setWhiteController(useFallback);
+          setBlackController("human");
         }
-        if (msg.type === "engineMove") {
-          const pending = pendingEngineRequestRef.current;
-          if (!pending || msg.requestId !== pending.id) {
+      }
+    };
+
+    function connect() {
+      if (disposed) return;
+      clearReconnectTimer();
+      const generation = engineConnectionGenerationRef.current + 1;
+      engineConnectionGenerationRef.current = generation;
+      setEngineStatus("connecting");
+
+      const ws = new WebSocket(modelWebsocketUrl());
+      engineWsRef.current = ws;
+
+      const isCurrentSocket = () =>
+        !disposed &&
+        engineConnectionGenerationRef.current === generation &&
+        engineWsRef.current === ws;
+
+      ws.onopen = () => {
+        if (!isCurrentSocket()) return;
+        reconnectAttempt = 0;
+        setEngineStatus("connected");
+      };
+
+      ws.onclose = () => {
+        if (!isCurrentSocket()) return;
+        engineWsRef.current = null;
+        pendingEngineRequestRef.current = null;
+        setEngineThinking(false);
+        setEngineStatus("disconnected");
+        scheduleReconnect();
+      };
+
+      ws.onerror = () => {
+        if (!isCurrentSocket()) return;
+        pendingEngineRequestRef.current = null;
+        setEngineThinking(false);
+        setEngineStatus("disconnected");
+        scheduleReconnect();
+        try {
+          ws.close();
+        } catch {
+          // The reconnect timer is already scheduled.
+        }
+      };
+
+      ws.onmessage = (event) => {
+        if (!isCurrentSocket()) return;
+        try {
+          const msg = JSON.parse(event.data) as EngineWsMessage;
+          if (msg.type === "ready" || msg.type === "models") {
+            handleModelList(Array.isArray(msg.models) ? msg.models : []);
             return;
           }
-          scheduleEngineMove(msg.bestmove, pending);
-          return;
+          if (msg.type === "engineMove") {
+            const pending = pendingEngineRequestRef.current;
+            if (!pending || msg.requestId !== pending.id) {
+              return;
+            }
+            scheduleEngineMove(msg.bestmove, pending);
+            return;
+          }
+          if (msg.type === "error") {
+            setError(`Engine error: ${msg.error}`);
+            pendingEngineRequestRef.current = null;
+            setEngineThinking(false);
+          }
+        } catch {
+          setError("Engine websocket message parse error.");
         }
-        if (msg.type === "error") {
-          setError(`Engine error: ${msg.error}`);
-          pendingEngineRequestRef.current = null;
-          setEngineThinking(false);
-        }
-      } catch {
-        setError("Engine websocket message parse error.");
-      }
-    };
+      };
+    }
+
+    connect();
 
     return () => {
-      ws.close();
+      disposed = true;
+      clearReconnectTimer();
+      engineConnectionGenerationRef.current += 1;
+      const ws = engineWsRef.current;
+      engineWsRef.current = null;
+      ws?.close();
     };
   }, [scheduleEngineMove]);
 
@@ -1389,6 +1461,7 @@ export default function GamePage() {
     setSelected(null);
     setLegalTargets(new Set());
     setLegalSafety({});
+    setPendingPromotion(null);
     setError(null);
   }
 
@@ -1449,12 +1522,28 @@ export default function GamePage() {
     setSelected(null);
     setLegalTargets(new Set());
     setLegalSafety({});
+    setPendingPromotion(null);
     setAutoPlayModels(enabled ? false : autoPlayModels);
+    setWhiteController("human");
+    setBlackController("human");
     setError(null);
   }
 
-  async function requestMove(from: Square, to: Square) {
+  async function requestMove(from: Square, to: Square, promotion?: PromotionPiece) {
     clearBestMoveArrows();
+    const movingPiece = pieceAt(from);
+    const isPromotion =
+      movingPiece?.[1] === "p" &&
+      ((movingPiece[0] === "w" && to[1] === "8") || (movingPiece[0] === "b" && to[1] === "1"));
+    if (isPromotion && !promotion) {
+      setPendingPromotion({ from, to, color: movingPiece[0] as Side });
+      setSelected(null);
+      setLegalTargets(new Set());
+      setLegalSafety({});
+      setError(null);
+      return false;
+    }
+
     const moveKey = `${activeState?.fen}:${from}:${to}`;
     if (moveInFlightRef.current === moveKey) return false;
     moveInFlightRef.current = moveKey;
@@ -1479,16 +1568,12 @@ export default function GamePage() {
       return false;
     }
 
-    const movingPiece = pieceAt(from);
-    const isPromotion =
-      movingPiece?.[1] === "p" &&
-      ((movingPiece[0] === "w" && to[1] === "8") || (movingPiece[0] === "b" && to[1] === "1"));
     const response = await runWorker({
       id: requestId(),
       type: "move",
       from,
       to,
-      ...(isPromotion ? { promotion: "q" as const } : {}),
+      ...(isPromotion ? { promotion: promotion ?? "q" } : {}),
     });
     if (!response.ok) {
       moveInFlightRef.current = null;
@@ -1500,6 +1585,7 @@ export default function GamePage() {
     setSelected(null);
     setLegalTargets(new Set());
     setLegalSafety({});
+    setPendingPromotion(null);
     setError(null);
 
     const timelineResponse = await runWorker({ id: requestId(), type: "getTimeline" });
@@ -1527,6 +1613,13 @@ export default function GamePage() {
   useEffect(() => {
     requestMoveRef.current = requestMove;
   });
+
+  function choosePromotion(piece: PromotionPiece) {
+    const pending = pendingPromotion;
+    if (!pending) return;
+    setPendingPromotion(null);
+    void requestMove(pending.from, pending.to, piece);
+  }
 
   useEffect(() => {
     if (autoPlayModels && canRequestModelMove) {
@@ -1729,6 +1822,7 @@ export default function GamePage() {
     setSelected(null);
     setLegalTargets(new Set());
     setLegalSafety({});
+    setPendingPromotion(null);
     setError(null);
     const nextTimeline = response.timeline ?? [{ ply: 0, san: null, uci: null, state: response.state }];
     const shouldPlayIntro = mode !== "sandbox" && nextTimeline.length > 1;
@@ -1802,6 +1896,7 @@ export default function GamePage() {
     setSelected(null);
     setLegalTargets(new Set());
     setLegalSafety({});
+    setPendingPromotion(null);
     setError(null);
   }
 
@@ -1980,6 +2075,8 @@ export default function GamePage() {
             boardMoveLabel={renderBoardMoveLabel()}
             showCheckmateOverlay={showCheckmateOverlay}
             activeState={activeState}
+            promotionChoice={pendingPromotion ? { color: pendingPromotion.color, square: pendingPromotion.to } : null}
+            onChoosePromotion={choosePromotion}
             onDismissCheckmate={dismissCheckmateOverlay}
           />
           {mobilePanel ? (
