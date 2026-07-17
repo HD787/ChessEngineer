@@ -35,6 +35,7 @@ type Snapshot = {
   isCheck: boolean;
   isCheckmate: boolean;
   isDraw: boolean;
+  drawReason: string | null;
   board: BoardState;
   attackMap: AttackMap;
 };
@@ -1191,7 +1192,7 @@ export default function GamePage() {
       return `Checkmate. ${activeState.turn === "w" ? "Black" : "White"} wins.`;
     }
     if (activeState.isDraw) {
-      return "Draw.";
+      return activeState.drawReason ? `Draw by ${activeState.drawReason}.` : "Draw.";
     }
     return `${activeState.turn === "w" ? "White" : "Black"} to move${activeState.isCheck ? " (check)" : ""}.`;
   }, [activeState]);

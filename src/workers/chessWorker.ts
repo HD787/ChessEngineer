@@ -19,6 +19,7 @@ type Snapshot = {
   isCheck: boolean;
   isCheckmate: boolean;
   isDraw: boolean;
+  drawReason: string | null;
   board: BoardState;
   attackMap: AttackMap;
 };
@@ -103,6 +104,16 @@ function serializeAttackMap(): AttackMap {
 }
 
 function snapshot(): Snapshot {
+  const drawReason = game.isStalemate()
+    ? "stalemate"
+    : game.isDrawByFiftyMoves()
+      ? "50-move rule"
+      : game.isThreefoldRepetition()
+        ? "threefold repetition"
+        : game.isInsufficientMaterial()
+          ? "insufficient material"
+          : null;
+
   return {
     fen: game.fen(),
     pgn: game.pgn(),
@@ -110,6 +121,7 @@ function snapshot(): Snapshot {
     isCheck: game.isCheck(),
     isCheckmate: game.isCheckmate(),
     isDraw: game.isDraw(),
+    drawReason,
     board: serializeBoard(),
     attackMap: serializeAttackMap(),
   };
