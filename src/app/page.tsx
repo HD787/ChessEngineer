@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { scenarios as scenarioData } from "../data/scenarios";
 
 type Side = "w" | "b";
@@ -45,7 +45,6 @@ function playPath(scenarioId: string, variantId: string) {
 }
 
 export default function Home() {
-  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("All");
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>(() =>
     Object.fromEntries(scenarioModes.map((scenario) => [scenario.id, scenario.variants[0].id])),
@@ -78,16 +77,8 @@ export default function Home() {
             </div>
           </div>
           {sandboxMode && sandboxVariant ? (
-            <article
-              role="button"
-              tabIndex={0}
-              onClick={() => router.push(playPath(sandboxMode.id, sandboxVariant.id))}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  router.push(playPath(sandboxMode.id, sandboxVariant.id));
-                }
-              }}
+            <Link
+              href={playPath(sandboxMode.id, sandboxVariant.id)}
               className="scenario-card sandbox-mini-card group hidden min-h-24 w-[46%] min-w-72 cursor-pointer px-5 py-4 text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ce-green)] sm:flex sm:flex-col sm:justify-center"
             >
               <span className="block text-[0.62rem] font-black uppercase tracking-[0.08em] ce-positive">
@@ -102,20 +93,12 @@ export default function Home() {
               <span className="ce-muted mt-1 block text-xs font-bold">
                 Play freely, edit positions, and test models.
               </span>
-            </article>
+            </Link>
           ) : null}
         </div>
         {sandboxMode && sandboxVariant ? (
-          <article
-            role="button"
-            tabIndex={0}
-            onClick={() => router.push(playPath(sandboxMode.id, sandboxVariant.id))}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                router.push(playPath(sandboxMode.id, sandboxVariant.id));
-              }
-            }}
+          <Link
+            href={playPath(sandboxMode.id, sandboxVariant.id)}
             className="scenario-card sandbox-mini-card mb-5 cursor-pointer px-4 py-3 text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ce-green)] sm:hidden"
           >
             <span className="block text-[0.62rem] font-black uppercase tracking-[0.08em] ce-positive">
@@ -125,7 +108,7 @@ export default function Home() {
               Sandbox
               <span className="scenario-card-arrow text-xl">{"›"}</span>
             </span>
-          </article>
+          </Link>
         ) : null}
 
         <div className="mb-3 flex items-end justify-between gap-4 border-b border-[var(--ce-ink)] pb-2">
@@ -164,18 +147,14 @@ export default function Home() {
           {scenarioCards.map(({ mode, selectedVariant }) => (
             <article
               key={mode.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => router.push(playPath(mode.id, selectedVariant.id))}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  router.push(playPath(mode.id, selectedVariant.id));
-                }
-              }}
               className="scenario-card group flex min-h-36 w-full cursor-pointer flex-col p-5 pl-6 text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ce-green)] sm:p-6 sm:pl-7"
             >
-              <div className="flex w-full items-start justify-between gap-5">
+              <Link
+                href={playPath(mode.id, selectedVariant.id)}
+                className="absolute inset-0 z-0"
+                aria-label={`Start ${mode.title}`}
+              />
+              <div className="pointer-events-none relative z-10 flex w-full items-start justify-between gap-5">
                 <div>
                   <span className="block text-xs font-black uppercase ce-positive">
                     {mode.shortDescription ?? mode.category}
@@ -190,7 +169,7 @@ export default function Home() {
                 <div className="flex shrink-0 items-center gap-3">
                   {mode.variants.length > 1 ? (
                     <label
-                      className="ce-section-title"
+                      className="ce-section-title pointer-events-auto"
                       onClick={(event) => event.stopPropagation()}
                     >
                       Variant
@@ -219,7 +198,7 @@ export default function Home() {
                   </span>
                 </div>
               </div>
-              <p className="ce-muted mt-4 border-t border-[var(--ce-line-soft)] pt-3 text-xs font-bold">
+              <p className="ce-muted pointer-events-none relative z-10 mt-4 border-t border-[var(--ce-line-soft)] pt-3 text-xs font-bold">
                 {selectedVariant.detail}
               </p>
             </article>

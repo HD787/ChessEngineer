@@ -11,6 +11,17 @@ import type { Key, Piece as GroundPiece } from "chessground/types";
 import openingData from "../../../data/openings.json";
 import { scenarios as scenarioData } from "../../../data/scenarios";
 import { BrowserStockfish, type StockfishResult } from "../../../lib/browserStockfish";
+import {
+  createChessStateController,
+  type AttackInfo,
+  type AttackMap,
+  type BoardState,
+  type ChessWorkerRequest as WorkerRequest,
+  type ChessWorkerResponse as WorkerResponse,
+  type PieceCode,
+  type Snapshot,
+  type TimelineEntry,
+} from "../../../lib/chessState";
 import { BoardArea } from "./_components/BoardArea";
 import { EvalBar } from "./_components/EvalBar";
 import { GameSidebar } from "./_components/GameSidebar";
@@ -23,29 +34,6 @@ const files = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
 const ranks = ["8", "7", "6", "5", "4", "3", "2", "1"] as const;
 
 type Square = `${(typeof files)[number]}${(typeof ranks)[number]}`;
-type PieceCode = `${"w" | "b"}${"p" | "n" | "b" | "r" | "q" | "k"}`;
-type BoardState = (PieceCode | null)[][];
-type AttackInfo = { w: boolean; b: boolean; occupied: boolean; attackersW: Square[]; attackersB: Square[] };
-type AttackMap = Record<Square, AttackInfo>;
-
-type Snapshot = {
-  fen: string;
-  pgn: string;
-  turn: "w" | "b";
-  isCheck: boolean;
-  isCheckmate: boolean;
-  isDraw: boolean;
-  drawReason: string | null;
-  board: BoardState;
-  attackMap: AttackMap;
-};
-
-type TimelineEntry = {
-  ply: number;
-  san: string | null;
-  uci: string | null;
-  state: Snapshot;
-};
 
 type ServedModel = {
   id: string;
@@ -72,36 +60,6 @@ type EngineWsMessage =
   | { type: "pong" }
   | { type: "engineMove"; bestmove: string; modelId?: string; requestId?: string }
   | { type: "error"; error: string; requestId?: string };
-
-type WorkerRequest =
-  | { id: string; type: "getState" }
-  | { id: string; type: "reset" }
-  | { id: string; type: "importPgn"; pgn: string }
-  | { id: string; type: "previewPgn"; pgn: string }
-  | { id: string; type: "exportPgn" }
-  | { id: string; type: "getTimeline" }
-  | { id: string; type: "setFen"; fen: string }
-  | { id: string; type: "editMove"; from: Square; to: Square }
-  | { id: string; type: "deletePiece"; square: Square }
-  | { id: string; type: "putPiece"; square: Square; piece: PieceCode }
-  | { id: string; type: "setTurn"; turn: Side }
-  | { id: string; type: "legalMoves"; from: Square }
-  | { id: string; type: "move"; from: Square; to: Square; promotion?: "q" | "r" | "b" | "n" };
-
-type WorkerResponse =
-  | {
-      id: string;
-      ok: true;
-      state: Snapshot;
-      legalTargets?: Square[];
-      legalSafety?: Partial<Record<Square, { attacked: boolean; defended: boolean }>>;
-      timeline?: TimelineEntry[];
-    }
-  | {
-      id: string;
-      ok: false;
-      error: string;
-    };
 
 type LegalSafety = { attacked: boolean; defended: boolean };
 type TrainingMode = string;
@@ -688,6 +646,7 @@ export default function GamePage() {
   } | null>(null);
 
   const workerRef = useRef<Worker | null>(null);
+  const localChessControllerRef = useRef<ReturnType<typeof createChessStateController> | null>(null);
   const pendingRef = useRef(new Map<string, (result: WorkerResponse) => void>());
   const boardElRef = useRef<HTMLDivElement | null>(null);
   const moveHistoryRef = useRef<HTMLDivElement | null>(null);
@@ -740,8 +699,39 @@ export default function GamePage() {
   }, []);
 
   useEffect(() => {
-    const worker = new Worker(new URL("../../../workers/chessWorker.ts?v=3", import.meta.url));
+    let worker: Worker | null = null;
     const pending = pendingRef.current;
+
+    const activateLocalChess = (message = "Chess worker unavailable; using compatibility mode.") => {
+      if (!localChessControllerRef.current) {
+        localChessControllerRef.current = createChessStateController();
+      }
+      pending.forEach((resolve) => {
+        resolve({ id: "worker-failed", ok: false, error: message });
+      });
+      pending.clear();
+    };
+
+    try {
+      worker = new Worker(new URL("../../../workers/chessWorker.ts", import.meta.url));
+    } catch {
+      activateLocalChess();
+    }
+
+    if (!worker) {
+      void runWorker({ id: requestId(), type: "getState" }).then((response) => {
+        if (!response.ok) {
+          setError(response.error);
+          return;
+        }
+        setState(response.state);
+        setTimeline([{ ply: 0, san: null, uci: null, state: response.state }]);
+      });
+      return () => {
+        localChessControllerRef.current = null;
+        pending.clear();
+      };
+    }
 
     worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
       const response = event.data;
@@ -751,6 +741,19 @@ export default function GamePage() {
       }
       pending.delete(response.id);
       resolver(response);
+    };
+    worker.onerror = () => {
+      worker?.terminate();
+      workerRef.current = null;
+      activateLocalChess();
+      void runWorker({ id: requestId(), type: "getState" }).then((response) => {
+        if (!response.ok) {
+          setError(response.error);
+          return;
+        }
+        setState(response.state);
+        setTimeline([{ ply: 0, san: null, uci: null, state: response.state }]);
+      });
     };
 
     workerRef.current = worker;
@@ -765,8 +768,9 @@ export default function GamePage() {
     });
 
     return () => {
-      worker.terminate();
+      worker?.terminate();
       workerRef.current = null;
+      localChessControllerRef.current = null;
       pending.clear();
     };
   }, []);
@@ -1279,6 +1283,11 @@ export default function GamePage() {
   function runWorker(request: WorkerRequest): Promise<WorkerResponse> {
     return new Promise((resolve) => {
       const worker = workerRef.current;
+      const localController = localChessControllerRef.current;
+      if (localController) {
+        resolve(localController.handle(request));
+        return;
+      }
       if (!worker) {
         resolve({ id: request.id, ok: false, error: "Worker unavailable." });
         return;
@@ -1554,8 +1563,10 @@ export default function GamePage() {
     if (isReviewing && timeline) {
       const reviewedState = timeline[currentPly].state;
       const branchResponse = currentPly === 0
-        ? await runWorker({ id: requestId(), type: "reset" })
-        : await runWorker({ id: requestId(), type: "importPgn", pgn: reviewedState.pgn });
+        ? await runWorker({ id: requestId(), type: "setFen", fen: reviewedState.fen })
+        : reviewedState.pgn.trim()
+          ? await runWorker({ id: requestId(), type: "importPgn", pgn: reviewedState.pgn })
+          : await runWorker({ id: requestId(), type: "setFen", fen: reviewedState.fen });
       if (!branchResponse.ok) {
         moveInFlightRef.current = null;
         setError(branchResponse.error);
@@ -1976,7 +1987,7 @@ export default function GamePage() {
 
   return (
     <main
-      className="ce-page-shell h-svh overflow-hidden p-0 text-[var(--ce-ink)] lg:p-2"
+      className="ce-page-shell ce-game-screen overflow-hidden p-0 text-[var(--ce-ink)] lg:p-2"
       onPointerDownCapture={dismissCheckmateOverlay}
     >
       <div className={"relative h-full min-h-0 w-full overflow-hidden lg:grid lg:items-stretch lg:gap-2 lg:overflow-visible " + appGridClass}>
@@ -1999,7 +2010,7 @@ export default function GamePage() {
 
         <div
           className={`absolute inset-y-0 left-0 z-30 min-h-0 w-[min(82vw,340px)] transition-transform duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-auto lg:translate-x-0 ${
-            mobilePanel === "left" ? "translate-x-0" : "-translate-x-full"
+            mobilePanel === "left" ? "pointer-events-auto translate-x-0" : "pointer-events-none -translate-x-full"
           }`}
         >
           <GameSidebar
@@ -2106,7 +2117,7 @@ export default function GamePage() {
 
         <div
           className={`absolute inset-y-0 right-0 z-30 min-h-0 w-[min(86vw,430px)] transition-transform duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-auto lg:translate-x-0 ${
-            mobilePanel === "right" ? "translate-x-0" : "translate-x-full"
+            mobilePanel === "right" ? "pointer-events-auto translate-x-0" : "pointer-events-none translate-x-full"
           }`}
         >
           <MovePanel
