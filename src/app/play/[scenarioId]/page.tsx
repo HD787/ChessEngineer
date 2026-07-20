@@ -1992,7 +1992,7 @@ export default function GamePage() {
     >
       <div className={"relative h-full min-h-0 w-full overflow-hidden lg:grid lg:items-stretch lg:gap-2 lg:overflow-visible " + appGridClass}>
         <div
-          className={`absolute inset-y-0 left-0 z-30 min-h-0 w-[min(82vw,340px)] transition-transform duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-auto lg:translate-x-0 ${
+          className={`absolute inset-y-0 left-0 z-30 min-h-0 w-[min(82vw,340px)] transition-transform duration-300 ease-out lg:pointer-events-auto lg:static lg:z-auto lg:h-full lg:w-auto lg:translate-x-0 ${
             mobilePanel === "left" ? "pointer-events-auto translate-x-0" : "pointer-events-none -translate-x-full"
           }`}
         >
@@ -2123,7 +2123,7 @@ export default function GamePage() {
         </div>
 
         <div
-          className={`absolute inset-y-0 right-0 z-30 min-h-0 w-[min(86vw,430px)] transition-transform duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-auto lg:translate-x-0 ${
+          className={`absolute inset-y-0 right-0 z-30 min-h-0 w-[min(86vw,430px)] transition-transform duration-300 ease-out lg:pointer-events-auto lg:static lg:z-auto lg:h-full lg:w-auto lg:translate-x-0 ${
             mobilePanel === "right" ? "pointer-events-auto translate-x-0" : "pointer-events-none translate-x-full"
           }`}
         >
