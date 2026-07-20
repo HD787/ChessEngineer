@@ -1991,29 +1991,6 @@ export default function GamePage() {
       onPointerDownCapture={dismissCheckmateOverlay}
     >
       <div className={"relative h-full min-h-0 w-full overflow-hidden lg:grid lg:items-stretch lg:gap-2 lg:overflow-visible " + appGridClass}>
-        {mobilePanel !== "left" ? (
-          <div className="pointer-events-none absolute left-2 top-1/2 z-40 -translate-y-1/2 lg:hidden">
-            <button
-              type="button"
-              onClick={() => setMobilePanel("left")}
-              className="ce-mobile-tab ce-mobile-tab--left pointer-events-auto px-2.5 py-2 text-xs font-bold"
-            >
-              Controls
-            </button>
-          </div>
-        ) : null}
-        {mobilePanel !== "right" ? (
-          <div className="pointer-events-none absolute right-2 top-1/2 z-40 -translate-y-1/2 lg:hidden">
-            <button
-              type="button"
-              onClick={() => setMobilePanel("right")}
-              className="ce-mobile-tab ce-mobile-tab--right pointer-events-auto px-2.5 py-2 text-xs font-bold"
-            >
-              Moves
-            </button>
-          </div>
-        ) : null}
-
         <div
           className={`absolute inset-y-0 left-0 z-30 min-h-0 w-[min(82vw,340px)] transition-transform duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-auto lg:translate-x-0 ${
             mobilePanel === "left" ? "pointer-events-auto translate-x-0" : "pointer-events-none -translate-x-full"
@@ -2063,6 +2040,30 @@ export default function GamePage() {
         </div>
 
         <div className={`absolute inset-0 z-10 min-h-0 transition-transform duration-300 ease-out lg:static lg:z-auto lg:h-full lg:translate-x-0 ${mobileBoardShift}`}>
+          <div className="pointer-events-none absolute inset-x-2 top-2 z-40 flex justify-between lg:hidden">
+            {mobilePanel !== "left" ? (
+              <button
+                type="button"
+                onClick={() => setMobilePanel("left")}
+                className="ce-mobile-tab pointer-events-auto px-3 py-1.5 text-xs font-bold"
+              >
+                Controls
+              </button>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+            {mobilePanel !== "right" ? (
+              <button
+                type="button"
+                onClick={() => setMobilePanel("right")}
+                className="ce-mobile-tab pointer-events-auto px-3 py-1.5 text-xs font-bold"
+              >
+                Moves
+              </button>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+          </div>
           <div
             className={`absolute left-2 right-2 top-12 z-30 h-2 overflow-hidden shadow-sm lg:hidden ${
               evalBarActive ? "bg-[var(--ce-ink)]" : "bg-[var(--ce-line)]"

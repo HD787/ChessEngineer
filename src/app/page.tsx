@@ -79,7 +79,7 @@ export default function Home() {
           {sandboxMode && sandboxVariant ? (
             <Link
               href={playPath(sandboxMode.id, sandboxVariant.id)}
-              className="scenario-card sandbox-mini-card group hidden min-h-24 w-full cursor-pointer px-5 py-4 text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ce-green)] sm:flex sm:w-[min(24rem,48%)] sm:min-w-0 sm:flex-col sm:justify-center"
+              className="scenario-card sandbox-mini-card group hidden min-h-24 w-full cursor-pointer px-5 py-4 text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ce-green)] sm:flex sm:w-80 sm:min-w-0 sm:flex-col sm:justify-center md:w-96"
             >
               <span className="block text-[0.62rem] font-black uppercase tracking-[0.08em] ce-positive">
                 Free board
@@ -99,7 +99,7 @@ export default function Home() {
         {sandboxMode && sandboxVariant ? (
           <Link
             href={playPath(sandboxMode.id, sandboxVariant.id)}
-            className="scenario-card sandbox-mini-card mb-5 cursor-pointer px-4 py-3 text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ce-green)] sm:hidden"
+            className="scenario-card sandbox-mini-card mb-5 block w-full cursor-pointer px-4 py-3 text-left transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ce-green)] sm:hidden"
           >
             <span className="block text-[0.62rem] font-black uppercase tracking-[0.08em] ce-positive">
               Free board
