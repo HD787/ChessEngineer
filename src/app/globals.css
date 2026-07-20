@@ -190,6 +190,11 @@ input[type="range"] {
   background: rgba(248, 241, 228, 0.95);
   color: var(--ce-ink);
   box-shadow: 0 8px 20px rgba(45, 39, 29, 0.12);
+  writing-mode: vertical-rl;
+}
+
+.ce-mobile-tab--left {
+  transform: rotate(180deg);
 }
 
 .ce-positive {
