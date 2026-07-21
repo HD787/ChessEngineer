@@ -54,7 +54,7 @@ type MaterialSummary = {
   blackPoints: number;
 };
 
-type EngineWsMessage =
+type EngineHttpMessage =
   | { type: "ready"; message: string; models: ServedModel[]; defaultModelId?: string }
   | { type: "models"; models: ServedModel[]; defaultModelId?: string }
   | { type: "pong" }
@@ -295,8 +295,9 @@ const MOVE_DEPTH = 6;
 const MOVE_LABEL_DEPTH = 7;
 const BEST_MOVES_DEPTH = 9;
 const BEST_MOVES_COUNT = 3;
-const MODEL_WS_RECONNECT_INITIAL_MS = 500;
-const MODEL_WS_RECONNECT_MAX_MS = 8000;
+const MODEL_HTTP_RECONNECT_INITIAL_MS = 500;
+const MODEL_HTTP_REFRESH_MS = 15000;
+const MODEL_HTTP_RECONNECT_MAX_MS = MODEL_HTTP_REFRESH_MS;
 const OPENING_BOOK_MAX_PLY = 16;
 const MOVE_LABELS: Record<MoveLabelId, MoveLabel> = {
   book: {
@@ -375,21 +376,6 @@ const MOVE_LABELS: Record<MoveLabelId, MoveLabel> = {
 
 function isBrowserStockfish(controller: PlayerController) {
   return isBrowserStockfishModelId(controller);
-}
-
-function modelWebsocketUrl() {
-  const configured = process.env.NEXT_PUBLIC_MODEL_WS_URL?.trim();
-  if (configured) {
-    if (configured.startsWith("ws://") || configured.startsWith("wss://")) {
-      return configured;
-    }
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const path = configured.startsWith("/") ? configured : `/${configured}`;
-    return `${protocol}//${window.location.host}${path}`;
-  }
-
-  const host = window.location.hostname || "localhost";
-  return `ws://${host}:8787`;
 }
 
 function formatEval(result: StockfishResult | null, isThinking: boolean) {
@@ -651,7 +637,6 @@ export default function GamePage() {
   const boardElRef = useRef<HTMLDivElement | null>(null);
   const moveHistoryRef = useRef<HTMLDivElement | null>(null);
   const groundRef = useRef<Api | null>(null);
-  const engineWsRef = useRef<WebSocket | null>(null);
   const engineReconnectTimerRef = useRef<number | null>(null);
   const engineConnectionGenerationRef = useRef(0);
   const applyingEngineMoveRef = useRef(false);
@@ -955,24 +940,46 @@ export default function GamePage() {
       return true;
     }
 
-    const ws = engineWsRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
+    if (engineStatus !== "connected") {
       pendingEngineRequestRef.current = null;
       setEngineThinking(false);
       setError("Model runner is not connected.");
       return false;
     }
-    ws.send(
-      JSON.stringify({
+    void fetch("/api/model/move", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         type: "engineMove",
         fen: current.fen,
         modelId: controller,
         requestId: engineRequestId,
         temperature: requestTemperature(temperatureModeRef.current, current.fen),
       }),
-    );
+    })
+      .then(async (response) => {
+        const msg = (await response.json()) as EngineHttpMessage;
+        if (!response.ok || msg.type === "error") {
+          throw new Error(msg.type === "error" ? msg.error : "Model runner request failed.");
+        }
+        if (msg.type !== "engineMove") {
+          throw new Error("Model runner returned an unexpected response.");
+        }
+        const pending = pendingEngineRequestRef.current;
+        if (!pending || msg.requestId !== pending.id) {
+          return;
+        }
+        scheduleEngineMove(msg.bestmove, pending);
+      })
+      .catch((reason: unknown) => {
+        const pending = pendingEngineRequestRef.current;
+        if (!pending || pending.id !== engineRequestId) return;
+        pendingEngineRequestRef.current = null;
+        setEngineThinking(false);
+        setError(reason instanceof Error ? `Engine error: ${reason.message}` : "Engine request failed.");
+      });
     return true;
-  }, [activeState, blackController, isIntroPlaying, isReviewing, isSolutionMode, positionEditor, scheduleEngineMove, whiteController]);
+  }, [activeState, blackController, engineStatus, isIntroPlaying, isReviewing, isSolutionMode, positionEditor, scheduleEngineMove, whiteController]);
 
   function swapPlayerColors() {
     setWhiteController(blackController);
@@ -1034,15 +1041,23 @@ export default function GamePage() {
     const scheduleReconnect = () => {
       if (disposed || engineReconnectTimerRef.current !== null) return;
       const delay = Math.min(
-        MODEL_WS_RECONNECT_MAX_MS,
-        MODEL_WS_RECONNECT_INITIAL_MS * 2 ** reconnectAttempt,
+        MODEL_HTTP_RECONNECT_MAX_MS,
+        MODEL_HTTP_RECONNECT_INITIAL_MS * 2 ** reconnectAttempt,
       );
       reconnectAttempt += 1;
       setEngineStatus("connecting");
       engineReconnectTimerRef.current = window.setTimeout(() => {
         engineReconnectTimerRef.current = null;
-        connect();
+        void connect();
       }, delay);
+    };
+
+    const scheduleRefresh = () => {
+      if (disposed || engineReconnectTimerRef.current !== null) return;
+      engineReconnectTimerRef.current = window.setTimeout(() => {
+        engineReconnectTimerRef.current = null;
+        void connect();
+      }, MODEL_HTTP_REFRESH_MS);
     };
 
     const handleModelList = (servedModels: ServedModel[]) => {
@@ -1071,87 +1086,46 @@ export default function GamePage() {
       }
     };
 
-    function connect() {
+    async function connect() {
       if (disposed) return;
       clearReconnectTimer();
       const generation = engineConnectionGenerationRef.current + 1;
       engineConnectionGenerationRef.current = generation;
       setEngineStatus("connecting");
 
-      const ws = new WebSocket(modelWebsocketUrl());
-      engineWsRef.current = ws;
+      const isCurrentRequest = () => !disposed && engineConnectionGenerationRef.current === generation;
 
-      const isCurrentSocket = () =>
-        !disposed &&
-        engineConnectionGenerationRef.current === generation &&
-        engineWsRef.current === ws;
-
-      ws.onopen = () => {
-        if (!isCurrentSocket()) return;
+      try {
+        const response = await fetch("/api/model/models", { cache: "no-store" });
+        const msg = (await response.json()) as EngineHttpMessage;
+        if (!isCurrentRequest()) return;
+        if (!response.ok || msg.type === "error") {
+          throw new Error(msg.type === "error" ? msg.error : "Model runner unavailable.");
+        }
+        if (msg.type !== "ready" && msg.type !== "models") {
+          throw new Error("Model runner returned an unexpected response.");
+        }
+        handleModelList(Array.isArray(msg.models) ? msg.models : []);
         reconnectAttempt = 0;
         setEngineStatus("connected");
-      };
-
-      ws.onclose = () => {
-        if (!isCurrentSocket()) return;
-        engineWsRef.current = null;
+        scheduleRefresh();
+      } catch {
+        if (!isCurrentRequest()) return;
         pendingEngineRequestRef.current = null;
         setEngineThinking(false);
         setEngineStatus("disconnected");
         scheduleReconnect();
-      };
-
-      ws.onerror = () => {
-        if (!isCurrentSocket()) return;
-        pendingEngineRequestRef.current = null;
-        setEngineThinking(false);
-        setEngineStatus("disconnected");
-        scheduleReconnect();
-        try {
-          ws.close();
-        } catch {
-          // The reconnect timer is already scheduled.
-        }
-      };
-
-      ws.onmessage = (event) => {
-        if (!isCurrentSocket()) return;
-        try {
-          const msg = JSON.parse(event.data) as EngineWsMessage;
-          if (msg.type === "ready" || msg.type === "models") {
-            handleModelList(Array.isArray(msg.models) ? msg.models : []);
-            return;
-          }
-          if (msg.type === "engineMove") {
-            const pending = pendingEngineRequestRef.current;
-            if (!pending || msg.requestId !== pending.id) {
-              return;
-            }
-            scheduleEngineMove(msg.bestmove, pending);
-            return;
-          }
-          if (msg.type === "error") {
-            setError(`Engine error: ${msg.error}`);
-            pendingEngineRequestRef.current = null;
-            setEngineThinking(false);
-          }
-        } catch {
-          setError("Engine websocket message parse error.");
-        }
-      };
+      }
     }
 
-    connect();
+    void connect();
 
     return () => {
       disposed = true;
       clearReconnectTimer();
       engineConnectionGenerationRef.current += 1;
-      const ws = engineWsRef.current;
-      engineWsRef.current = null;
-      ws?.close();
     };
-  }, [scheduleEngineMove]);
+  }, []);
 
   useEffect(() => {
     if (!boardElRef.current || groundRef.current) {
