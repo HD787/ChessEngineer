@@ -91,7 +91,7 @@ export default function Home() {
                 </span>
               </span>
               <span className="ce-muted mt-1 block text-xs font-bold">
-                Play freely, edit positions, and test models.
+                Play freely, edit positions, replay PGNs, and test models.
               </span>
             </Link>
           ) : null}
@@ -107,6 +107,9 @@ export default function Home() {
             <span className="ce-title mt-1 flex items-center justify-between gap-3 text-base">
               Sandbox
               <span className="scenario-card-arrow text-xl">{"›"}</span>
+            </span>
+            <span className="ce-muted mt-1 block text-xs font-bold">
+              Replay PGNs, edit positions, and test models.
             </span>
           </Link>
         ) : null}
