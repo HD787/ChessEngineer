@@ -53,6 +53,10 @@ type MaterialSummary = {
   whitePoints: number;
   blackPoints: number;
 };
+type ImportedGame = {
+  name: string;
+  pgn: string;
+};
 
 type EngineHttpMessage =
   | { type: "ready"; message: string; models: ServedModel[]; defaultModelId?: string }
@@ -202,6 +206,22 @@ function squareOverlayPosition(square: Square, isFlipped: boolean) {
 
 function requestId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function pgnHeaderValue(pgn: string, header: string) {
+  const escaped = header.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return pgn.match(new RegExp(`\\[${escaped}\\s+"([^"]+)"\\]`))?.[1]?.trim();
+}
+
+function importedPgnName(pgn: string, fallback = "Uploaded game") {
+  const white = pgnHeaderValue(pgn, "White");
+  const black = pgnHeaderValue(pgn, "Black");
+  const event = pgnHeaderValue(pgn, "Event");
+  const date = pgnHeaderValue(pgn, "Date");
+  if (white && black) {
+    return `${white} vs ${black}${date && date !== "????.??.??" ? ` · ${date}` : ""}`;
+  }
+  return event && event !== "?" ? event : fallback;
 }
 
 function controllerLabel(controller: PlayerController, modelById: Map<string, ServedModel>) {
@@ -625,6 +645,9 @@ export default function GamePage() {
   const [bestMovesThinking, setBestMovesThinking] = useState(false);
   const [dismissedCheckmateFen, setDismissedCheckmateFen] = useState<string | null>(null);
   const [mobilePanel, setMobilePanel] = useState<"left" | "right" | null>(null);
+  const [importedGame, setImportedGame] = useState<ImportedGame | null>(null);
+  const [importedGameDiverged, setImportedGameDiverged] = useState(false);
+  const [pgnImportText, setPgnImportText] = useState("");
   const [pendingPromotion, setPendingPromotion] = useState<{
     from: Square;
     to: Square;
@@ -911,7 +934,16 @@ export default function GamePage() {
 
   const requestCurrentModelMove = useCallback((stateOverride?: Snapshot | null) => {
     const current = stateOverride ?? activeState;
-    if (!current || current.isCheckmate || current.isDraw || isReviewing || isIntroPlaying || isSolutionMode || positionEditor) {
+    const isPostMoveRequest = Boolean(stateOverride);
+    if (
+      !current ||
+      current.isCheckmate ||
+      current.isDraw ||
+      (!isPostMoveRequest && isReviewing) ||
+      isIntroPlaying ||
+      isSolutionMode ||
+      positionEditor
+    ) {
       return false;
     }
     const controller = current.turn === "w" ? whiteController : blackController;
@@ -1027,6 +1059,63 @@ export default function GamePage() {
     }
   }
 
+  async function importPgnBaseline(pgn: string, fallbackName = "Uploaded game") {
+    const trimmed = pgn.trim();
+    if (!trimmed) {
+      setError("Paste or upload a PGN first.");
+      return false;
+    }
+    pendingEngineRequestRef.current = null;
+    moveInFlightRef.current = null;
+    setEngineThinking(false);
+    setIsIntroPlaying(false);
+    setIsSolutionMode(false);
+    solutionReturnRef.current = null;
+    clearBestMoveArrows();
+
+    const response = await runWorker({ id: requestId(), type: "importPgn", pgn: trimmed });
+    if (!response.ok || !response.timeline) {
+      setError(response.ok ? "The PGN has no moves." : response.error);
+      return false;
+    }
+
+    const nextTimeline = response.timeline;
+    setImportedGame({ name: importedPgnName(trimmed, fallbackName), pgn: trimmed });
+    setImportedGameDiverged(false);
+    setState(response.state);
+    setTimeline(nextTimeline);
+    setCurrentPly(0);
+    setModeStartPly(0);
+    setActiveMode("sandbox");
+    setActiveVariantId("standard");
+    setSelected(null);
+    setLegalTargets(new Set());
+    setLegalSafety({});
+    setPendingPromotion(null);
+    setPositionEditor(false);
+    setIsFlipped(false);
+    setPgnImportText("");
+    setError(null);
+    return true;
+  }
+
+  async function importPgnText() {
+    await importPgnBaseline(pgnImportText);
+  }
+
+  async function importPgnFile(file: File) {
+    try {
+      await importPgnBaseline(await file.text(), file.name.replace(/\.[^.]+$/, "") || file.name);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not read PGN file.");
+    }
+  }
+
+  async function restoreImportedPgn() {
+    if (!importedGame) return;
+    await importPgnBaseline(importedGame.pgn, importedGame.name);
+  }
+
   useEffect(() => {
     let disposed = false;
     let reconnectAttempt = 0;
@@ -1062,28 +1151,6 @@ export default function GamePage() {
 
     const handleModelList = (servedModels: ServedModel[]) => {
       setModels(servedModels);
-      const activeScenario = trainingModes.find((mode) => mode.id === activeModeRef.current);
-      const activeVariant = activeScenario?.variants.find(
-        (variant) => variant.id === activeVariantIdRef.current,
-      );
-      const fallback = preferredScenarioModelId(
-        [browserStockfishModel, ...servedModels],
-        activeVariant?.opponentModelId,
-      );
-      const useFallback = (value: PlayerController) =>
-        (value === "human" || isBrowserStockfish(value)) && fallback ? fallback : value;
-      if (activeModeRef.current === "sandbox") {
-        setBlackController(useFallback);
-      } else {
-        const playerSide = activeVariant?.playerSide;
-        if (playerSide === "w") {
-          setWhiteController("human");
-          setBlackController(useFallback);
-        } else {
-          setWhiteController(useFallback);
-          setBlackController("human");
-        }
-      }
     };
 
     async function connect() {
@@ -1437,8 +1504,11 @@ export default function GamePage() {
     setLegalSafety(response.legalSafety ?? {});
   }
 
-  function applyEditedState(nextState: Snapshot) {
+  function applyEditedState(nextState: Snapshot, options: { markImportedGameDiverged?: boolean } = {}) {
     clearBestMoveArrows();
+    if (options.markImportedGameDiverged !== false && importedGame) {
+      setImportedGameDiverged(true);
+    }
     setState(nextState);
     setTimeline([{ ply: 0, san: null, uci: null, state: nextState }]);
     setCurrentPly(0);
@@ -1569,6 +1639,9 @@ export default function GamePage() {
     }
 
     setState(response.state);
+    if (importedGame) {
+      setImportedGameDiverged(true);
+    }
     setSelected(null);
     setLegalTargets(new Set());
     setLegalSafety({});
@@ -1780,6 +1853,10 @@ export default function GamePage() {
   }
 
   async function resetGame() {
+    if (importedGame) {
+      await restoreImportedPgn();
+      return;
+    }
     await startTrainingMode(activeMode, true);
   }
 
@@ -1823,6 +1900,9 @@ export default function GamePage() {
     setActiveVariantId(variant?.id ?? "standard");
     setIsSolutionMode(false);
     solutionReturnRef.current = null;
+    setImportedGame(null);
+    setImportedGameDiverged(false);
+    setPgnImportText("");
     setAutoPlayModels(true);
     if (!preserveControllers) {
       setTemperatureMode(variant?.temperature.mode ?? "optimal");
@@ -1948,10 +2028,6 @@ export default function GamePage() {
   }
 
 
-  const currentMoveText =
-    currentPly === 0
-      ? "Starting position"
-      : String(Math.ceil(currentPly / 2)) + (currentPly % 2 === 0 ? "..." : ".") + " " + (timeline?.[currentPly]?.san ?? "");
   const mobileBoardShift =
     mobilePanel === "left"
       ? "translate-x-[min(82vw,340px)]"
@@ -1992,7 +2068,7 @@ export default function GamePage() {
             showOccupiedOnly={showOccupiedOnly}
             showOwnOccupiedOnly={showOwnOccupiedOnly}
             overlaySide={overlaySide}
-            controlsDisabled={isReviewing || positionEditor}
+            controlsDisabled={positionEditor}
             overlayOwnPiecesDisabled={!showControlOverlay || overlaySide === "both"}
             onRestart={() => void resetGame()}
             onFlip={() => setIsFlipped((value) => !value)}
@@ -2118,7 +2194,10 @@ export default function GamePage() {
             currentPly={currentPly}
             lastPly={lastPly}
             timelineExists={Boolean(timeline)}
-            currentMoveText={currentMoveText}
+            importedGameName={importedGame?.name ?? null}
+            importedGameDiverged={importedGameDiverged}
+            pgnImportText={pgnImportText}
+            pgnImportDisabled={isIntroPlaying || isSolutionMode || activeMode !== "sandbox"}
             editorPieces={editorPieces}
             onTogglePositionEditor={togglePositionEditor}
             onStartEditorPieceDrag={startEditorPieceDrag}
@@ -2128,6 +2207,10 @@ export default function GamePage() {
             onReturnFromSolution={returnFromSolution}
             onShowBestMoves={() => void showBestMoves()}
             onGoToPly={goToPly}
+            onPgnImportTextChange={setPgnImportText}
+            onImportPgnText={() => void importPgnText()}
+            onImportPgnFile={(file) => void importPgnFile(file)}
+            onRestoreImportedPgn={() => void restoreImportedPgn()}
             renderHistoryMoveLabel={renderHistoryMoveLabel}
           />
         </div>

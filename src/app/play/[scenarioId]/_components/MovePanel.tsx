@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from "react";
+import { useState, type ChangeEvent, type DragEvent, type ReactNode, type RefObject } from "react";
 
 type Side = "w" | "b";
 type PieceCode = `${Side}${"p" | "n" | "b" | "r" | "q" | "k"}`;
@@ -73,7 +73,10 @@ type Props = {
   currentPly: number;
   lastPly: number;
   timelineExists: boolean;
-  currentMoveText: string;
+  importedGameName: string | null;
+  importedGameDiverged: boolean;
+  pgnImportText: string;
+  pgnImportDisabled: boolean;
   editorPieces: EditorPiece[];
   onTogglePositionEditor: (enabled: boolean) => void;
   onStartEditorPieceDrag: (piece: PieceCode, event: MouseEvent | TouchEvent) => void;
@@ -83,6 +86,10 @@ type Props = {
   onReturnFromSolution: () => void;
   onShowBestMoves: () => void;
   onGoToPly: (ply: number) => void;
+  onPgnImportTextChange: (value: string) => void;
+  onImportPgnText: () => void;
+  onImportPgnFile: (file: File) => void;
+  onRestoreImportedPgn: () => void;
   renderHistoryMoveLabel: (ply: number | null) => ReactNode;
 };
 
@@ -103,7 +110,10 @@ export function MovePanel({
   currentPly,
   lastPly,
   timelineExists,
-  currentMoveText,
+  importedGameName,
+  importedGameDiverged,
+  pgnImportText,
+  pgnImportDisabled,
   editorPieces,
   onTogglePositionEditor,
   onStartEditorPieceDrag,
@@ -113,10 +123,115 @@ export function MovePanel({
   onReturnFromSolution,
   onShowBestMoves,
   onGoToPly,
+  onPgnImportTextChange,
+  onImportPgnText,
+  onImportPgnFile,
+  onRestoreImportedPgn,
   renderHistoryMoveLabel,
 }: Props) {
+  const [showPgnModal, setShowPgnModal] = useState(false);
+  const [isDraggingPgn, setIsDraggingPgn] = useState(false);
+  const canUsePgnControls = activeMode === "sandbox" && !positionEditor;
+
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) {
+      onImportPgnFile(file);
+      setShowPgnModal(false);
+    }
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDraggingPgn(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      onImportPgnFile(file);
+      setShowPgnModal(false);
+    }
+  }
+
+  function importPastedPgn() {
+    onImportPgnText();
+    setShowPgnModal(false);
+  }
+
   return (
     <section className={`${className} ce-panel flex min-h-0 flex-col p-4`}>
+      {showPgnModal ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[rgba(29,34,31,0.42)] p-4">
+          <div className="ce-panel w-full max-w-lg p-4 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="ce-section-title">PGN Import</p>
+                <h3 className="ce-title mt-1 text-lg">Load a game</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPgnModal(false)}
+                className="ce-button-secondary h-8 w-8 text-sm font-bold"
+                aria-label="Close PGN import"
+              >
+                X
+              </button>
+            </div>
+            <div
+              onDragOver={(event) => {
+                event.preventDefault();
+                setIsDraggingPgn(true);
+              }}
+              onDragLeave={() => setIsDraggingPgn(false)}
+              onDrop={handleDrop}
+              className={`ce-subpanel mt-4 grid min-h-32 place-items-center border p-4 text-center ${
+                isDraggingPgn ? "border-[var(--ce-green)] bg-[var(--ce-green-soft)]" : ""
+              }`}
+            >
+              <div>
+                <p className="ce-title text-base">Drop a PGN file here</p>
+                <p className="ce-muted mt-1 text-xs font-medium">`.pgn` or `.txt` works.</p>
+                <label className="ce-button-primary mt-3 inline-block cursor-pointer px-3 py-2 text-xs font-bold">
+                  Choose file
+                  <input
+                    type="file"
+                    accept=".pgn,.txt,text/plain,application/x-chess-pgn"
+                    onChange={handleFileChange}
+                    disabled={pgnImportDisabled}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+            <label className="ce-label mt-4 block">
+              Paste PGN
+              <textarea
+                value={pgnImportText}
+                onChange={(event) => onPgnImportTextChange(event.target.value)}
+                disabled={pgnImportDisabled}
+                rows={8}
+                className="ce-input mt-1 max-h-64 min-h-36 w-full resize-y px-2 py-2 text-xs font-medium outline-none"
+              />
+            </label>
+            <div className="mt-3 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowPgnModal(false)}
+                className="ce-button-secondary px-3 py-2 text-xs font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={importPastedPgn}
+                disabled={pgnImportDisabled || !pgnImportText.trim()}
+                className="ce-button-primary px-3 py-2 text-xs font-bold disabled:border-[var(--ce-line)] disabled:bg-[var(--ce-line-soft)] disabled:text-[var(--ce-heading-muted)]"
+              >
+                Import PGN
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="ce-title text-lg">{positionEditor ? "Position Editor" : "Moves"}</h2>
@@ -298,6 +413,41 @@ export function MovePanel({
           </div>
 
           <div className="ce-subpanel mt-3 shrink-0 bg-[var(--ce-paper-warm)] p-3">
+            {canUsePgnControls ? (
+              <div className="mb-3 border-b border-[var(--ce-line-soft)] pb-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="ce-section-title">PGN</p>
+                  {importedGameName ? (
+                    <span className="ce-muted truncate text-[10px] font-bold" title={importedGameName}>
+                      {importedGameDiverged ? "Exploring" : "Original"}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPgnModal(true)}
+                    disabled={pgnImportDisabled}
+                    className="ce-button-primary px-2 py-1.5 text-xs font-bold disabled:opacity-50"
+                  >
+                    Import PGN
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onRestoreImportedPgn}
+                    disabled={pgnImportDisabled || !importedGameName}
+                    className="ce-button-secondary px-2 py-1.5 text-xs font-bold disabled:opacity-40"
+                  >
+                    Restore
+                  </button>
+                </div>
+                {importedGameName ? (
+                  <p className="ce-muted mt-1.5 truncate text-xs font-medium" title={importedGameName}>
+                    {importedGameName}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             <div className="flex items-center justify-center gap-2">
               <button
                 type="button"
@@ -340,16 +490,6 @@ export function MovePanel({
                 {">|"}
               </button>
             </div>
-            <input
-              type="range"
-              min={0}
-              max={lastPly}
-              value={currentPly}
-              onChange={(event) => onGoToPly(Number(event.target.value))}
-              className="mt-3 w-full"
-              disabled={!timelineExists}
-            />
-            <p className="ce-text mt-2 text-center text-xs font-bold">{currentMoveText}</p>
           </div>
         </>
       )}
