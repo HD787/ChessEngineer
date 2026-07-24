@@ -120,6 +120,8 @@ type TrainingScenario = {
 };
 
 const openings = openingData as Record<string, Opening>;
+const appBasePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/+$/, "");
+const appApiPath = (path: string) => `${appBasePath}${path.startsWith("/") ? path : `/${path}`}`;
 const BROWSER_STOCKFISH_ID = "browser-stockfish-lite";
 const browserStockfishModel: ServedModel = {
   id: BROWSER_STOCKFISH_ID,
@@ -978,7 +980,7 @@ export default function GamePage() {
       setError("Model runner is not connected.");
       return false;
     }
-    void fetch("/api/model/move", {
+    void fetch(appApiPath("/api/model/move"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1163,7 +1165,7 @@ export default function GamePage() {
       const isCurrentRequest = () => !disposed && engineConnectionGenerationRef.current === generation;
 
       try {
-        const response = await fetch("/api/model/models", { cache: "no-store" });
+        const response = await fetch(appApiPath("/api/model/models"), { cache: "no-store" });
         const msg = (await response.json()) as EngineHttpMessage;
         if (!isCurrentRequest()) return;
         if (!response.ok || msg.type === "error") {
